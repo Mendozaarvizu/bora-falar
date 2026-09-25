@@ -21,20 +21,6 @@ PT.PAIRS = [
   ["falo", "falou", "o × ou"]
 ];
 
-/* Sons do português brasileiro */
-PT.SOUNDS = [
-  { t: "ão", d: "Som nasal: o ar sai pela boca e pelo nariz ao mesmo tempo.", ex: ["pão", "mão", "não", "feijão", "coração"] },
-  { t: "ã · am · an", d: "O **a** fica nasal antes de **m** ou **n**, ou com o til.", ex: ["irmã", "manhã", "campo", "samba"] },
-  { t: "ãe · õe", d: "Dois sons nasais juntos. Pratique devagar.", ex: ["mãe", "pães", "põe", "limões"] },
-  { t: "lh", d: "Como um **l**, mas com o meio da língua no céu da boca.", ex: ["filho", "mulher", "olho", "trabalho"] },
-  { t: "nh", d: "Como um **n**, mas com o meio da língua no céu da boca.", ex: ["sonho", "vinho", "amanhã", "banho"] },
-  { t: "r · rr", d: "No começo da palavra e com **rr**, o **r** soa como um **h** forte, de ar.", ex: ["Rio", "rua", "carro", "terra"] },
-  { t: "r entre vogais", d: "Um toque rápido da língua atrás dos dentes.", ex: ["caro", "hora", "agora", "claro"] },
-  { t: "ti · di", d: "No Brasil, **ti** soa **tchi** e **di** soa **dji**. O **te** e o **de** no final também.", ex: ["tia", "dia", "leite", "tarde", "cidade"] },
-  { t: "l final", d: "O **l** no fim da sílaba soa como **u**.", ex: ["Brasil", "sol", "mal", "futebol"] },
-  { t: "e · o no final", d: "No final da palavra, o **e** soa quase **i** e o **o** soa quase **u**.", ex: ["leite", "sorte", "obrigado", "gato"] }
-];
-
 /* Frases para repetir (e a frase do dia): [frase, contexto] */
 PT.PHRASES = [
   ["E aí, tudo certo?", "Você encontra um amigo."],
@@ -127,6 +113,7 @@ PT.BADGES = [
   { id: "cartoes500", e: "🐘", t: "Memória de elefante", d: "Revise 500 cartões." },
   { id: "ouvido", e: "👂", t: "Ouvido afiado", d: "Acerte 25 exercícios de escuta." },
   { id: "ditado", e: "✍️", t: "Escriba", d: "Acerte 20 ditados." },
+  { id: "foneticista", e: "🔤", t: "Foneticista", d: "Acerte 20 perguntas no Desafio AFI." },
   { id: "papo1", e: "💬", t: "Primeiro papo", d: "Mande sua primeira mensagem numa conversa." },
   { id: "papo50", e: "🗣️", t: "Tagarela", d: "Mande 50 mensagens nas conversas." },
   { id: "avaliacao", e: "📝", t: "Aluno aplicado", d: "Termine uma conversa e receba uma avaliação." },

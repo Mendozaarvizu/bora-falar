@@ -1,7 +1,7 @@
 <title>Bora Falar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@500;700;800&family=Noto+Sans:wght@400;700&display=swap">
 <style>
 :root {
   --bg: #EDF1EB;
@@ -24,6 +24,7 @@
   --shadow: 0 1px 2px rgba(19,34,27,.06), 0 8px 24px rgba(19,34,27,.08);
   --display: "Unbounded", "Arial Black", system-ui, sans-serif;
   --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ipa: "Noto Sans", "Charis SIL", "Doulos SIL", "Gentium Plus", "Lucida Sans Unicode", "Segoe UI", system-ui, sans-serif;
   --r: 16px;
 }
 @media (prefers-color-scheme: dark) {
@@ -302,6 +303,60 @@ body.focus main { padding-bottom: 32px; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .notice { border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; font-size: .9rem; color: var(--ink-2); }
 
+/* ---------- laboratório de sons ---------- */
+.ipa { font-family: var(--ipa); letter-spacing: 0; }
+.sym-big { font-family: var(--ipa); font-size: 2.6rem; font-weight: 700; line-height: 1.1; min-width: 2.2em; text-align: center; flex: none; }
+.bonus { width: 100%; text-align: left; border: 0; border-radius: var(--r); padding: 16px 18px; background: var(--deep); color: #E7EEE9; display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; transition: transform .12s; }
+.bonus:hover { transform: translateY(-2px); }
+.bonus .ipa-mark { font-family: var(--ipa); font-size: 1.7rem; font-weight: 700; color: var(--gold); }
+.bonus .label { color: var(--gold); }
+.bonus small { color: rgba(231,238,233,.78); font-size: .85rem; line-height: 1.35; }
+.tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button { white-space: nowrap; flex: none; }
+.vchart { width: 100%; max-width: 480px; margin: 0 auto; }
+.vchart svg, .mouth-box svg { width: 100%; height: auto; display: block; }
+.vchart .tz { fill: var(--surface-2); stroke: var(--ink-3); stroke-width: 1.5; }
+.vchart .guide { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 4 4; }
+.vchart .ax { fill: var(--ink-2); font: 700 12px var(--body); }
+.mouth .ax { fill: var(--ink-2); font: 700 11px var(--body); }
+.vnode { cursor: pointer; outline: none; }
+.vnode circle { fill: var(--surface); stroke: var(--ink-3); stroke-width: 1.5; transition: fill .15s; }
+.vnode.round circle { stroke: var(--gold-deep); stroke-width: 2.5; }
+.vnode.pto circle { stroke-dasharray: 3 3; }
+.vnode text { fill: var(--ink); font: 700 17px var(--ipa); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.vnode:hover circle { fill: var(--bg); }
+.vnode.on circle { fill: var(--accent); stroke: var(--accent); }
+.vnode.on text { fill: var(--on-accent); }
+.vnode:focus-visible circle { stroke: var(--gold); stroke-width: 3; }
+.mouth-box { max-width: 260px; width: 100%; margin: 0 auto; }
+.mouth .skin { fill: var(--surface-2); stroke: var(--ink-3); stroke-width: 1.5; }
+.mouth .air { fill: var(--surface); }
+.mouth .air.nose-on { fill: color-mix(in srgb, var(--gold) 55%, var(--surface)); }
+.mouth .tongue { fill: color-mix(in srgb, var(--accent) 22%, var(--surface)); stroke: var(--ink-3); stroke-width: 1.2; }
+.mouth .tooth { fill: var(--surface); stroke: var(--ink-3); stroke-width: 1; }
+.mouth .fold { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+.mouth .hot { fill: var(--accent); }
+.mouth .ring { fill: none; stroke: var(--accent); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: ring 1.4s ease-out infinite; }
+@keyframes ring { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.7); opacity: 0; } }
+.ex-row { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+.ipaw { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.ipaw .ipa { font-size: .92rem; color: var(--ink-2); padding-left: 6px; }
+.symchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.symchip { position: relative; font-family: var(--ipa); font-size: 1.25rem; font-weight: 700; min-width: 52px; height: 48px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); box-shadow: 0 3px 0 var(--line); }
+.symchip small { position: absolute; top: -8px; right: -6px; font-size: .8rem; line-height: 1; }
+.symchip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); box-shadow: 0 3px 0 var(--ink-3); }
+.cons-detail { display: grid; gap: 16px; }
+@media (min-width: 620px) { .cons-detail { grid-template-columns: 230px 1fr; align-items: start; } }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.tag.flag-tag { background: color-mix(in srgb, var(--gold) 35%, var(--surface)); color: var(--ink); }
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cmp > div { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.cmp .ipa { font-size: 1.2rem; font-weight: 700; overflow-wrap: anywhere; }
+.nasal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+.opt.ipa { font-family: var(--ipa); font-size: 1.2rem; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -341,4 +396,6 @@ body.focus main { padding-bottom: 32px; }
 <script charset="utf-8" src="core.js"></script>
 <script charset="utf-8" src="lessons.js"></script>
 <script charset="utf-8" src="practice.js"></script>
+<script charset="utf-8" src="data-sons.js"></script>
+<script charset="utf-8" src="sons.js"></script>
 <script charset="utf-8" src="chat.js"></script>

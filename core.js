@@ -63,7 +63,7 @@
   function fresh() {
     return {
       v: 1, xp: 0, days: {}, lessons: {}, cards: {}, custom: {}, badges: {},
-      stats: { answers: 0, correct: 0, reviews: 0, listenOk: 0, dictOk: 0, msgs: 0, evals: 0, bestCombo: 0 },
+      stats: { answers: 0, correct: 0, reviews: 0, listenOk: 0, dictOk: 0, msgs: 0, evals: 0, bestCombo: 0, ipaOk: 0 },
       settings: { goal: 150, rate: 1, voice: "", ptNotes: true, name: "" },
       lastActive: null, updatedAt: 0
     };
@@ -151,7 +151,7 @@
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { clearTimeout(sync.timer); flush(); } });
 
   /* ---------- voz ---------- */
-  const tts = { ok: "speechSynthesis" in window, voices: [], voice: null };
+  const tts = { ok: "speechSynthesis" in window, voices: [], voice: null, voicePT: null };
   PT.tts = tts;
   PT.loadVoices = function () {
     if (!tts.ok) return;
@@ -163,6 +163,8 @@
     tts.voice = tts.voices.find((v) => v.voiceURI === pref)
       || br.find((v) => /Luciana|Google|Francisca|Thalita|Natural/i.test(v.name))
       || br[0] || tts.voices[0] || null;
+    // voz de Portugal, só para comparar no Laboratório de sons
+    tts.voicePT = tts.voices.find((v) => /pt[-_]PT/i.test(v.lang)) || null;
   };
   PT.speak = function (text, opts = {}) {
     return new Promise((resolve) => {
@@ -173,8 +175,9 @@
         speechSynthesis.cancel();
         const said = String(text).replace(/\b(vc|tb|pq|bjs|td|hj|blz|msg|obg|abs)\b/gi, (m) => ABBR[m.toLowerCase()]).replace(/k{3,}/gi, "rá rá rá");
         const u = new SpeechSynthesisUtterance(said);
-        u.lang = tts.voice ? tts.voice.lang : "pt-BR";
-        if (tts.voice) u.voice = tts.voice;
+        const voice = opts.pt && tts.voicePT ? tts.voicePT : tts.voice;
+        u.lang = voice ? voice.lang : "pt-BR";
+        if (voice) u.voice = voice;
         u.rate = (opts.slow ? 0.62 : 0.95) * (PT.S.settings.rate || 1);
         u.onend = () => done(true);
         u.onerror = () => done(false);
@@ -189,8 +192,8 @@
     return b;
   };
   document.addEventListener("click", (e) => {
-    const s = e.target.closest("[data-say]");
-    if (s) { e.preventDefault(); PT.speak(s.dataset.say); }
+    const s = e.target.closest("[data-say], [data-say-pt]");
+    if (s) { e.preventDefault(); if (s.dataset.sayPt) PT.speak(s.dataset.sayPt, { pt: true }); else PT.speak(s.dataset.say); }
   });
 
   /* ---------- gamificação ---------- */
@@ -242,7 +245,7 @@
       dias3: sk >= 3, dias7: sk >= 7, dias30: sk >= 30,
       cartoes50: st.reviews >= 50, cartoes500: st.reviews >= 500,
       ouvido: st.listenOk >= 25, ditado: st.dictOk >= 20,
-      papo1: st.msgs >= 1, papo50: st.msgs >= 50, avaliacao: st.evals >= 1,
+      papo1: st.msgs >= 1, papo50: st.msgs >= 50, avaliacao: st.evals >= 1, foneticista: (st.ipaOk || 0) >= 20,
       nivel5: lv >= 5, nivel10: lv >= 10
     };
     for (const [id, ok] of Object.entries(rules)) if (ok) PT.award(id);
@@ -349,7 +352,8 @@
     const v = $("#view");
     PT.put(v);
     PT.views[tab](v, arg);
-    document.querySelectorAll(".nav button").forEach((b) => { if (b.dataset.tab === tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+    const navTab = tab === "sons" ? "ouvir" : tab;
+    document.querySelectorAll(".nav button").forEach((b) => { if (b.dataset.tab === navTab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
     try { if (location.hash.slice(1) !== tab) history.replaceState(null, "", "#" + tab); } catch (e) { /* sem histórico */ }
     window.scrollTo(0, 0);
     PT.updateHeader();
@@ -481,6 +485,8 @@
         h("button", { class: "tile", onclick: () => PT.startDictation() }, h("span", { class: "e" }, "✍️"), h("b", {}, "Ditado rápido"), h("span", { class: "small muted" }, "Ouça e escreva")),
         h("button", { class: "tile", onclick: () => PT.startPairs() }, h("span", { class: "e" }, "👂"), h("b", {}, "Pares mínimos"), h("span", { class: "small muted" }, "avó ou avô?")),
         h("button", { class: "tile", onclick: () => PT.go("conversa") }, h("span", { class: "e" }, "💬"), h("b", {}, "Conversar"), h("span", { class: "small muted" }, "Pratique com a IA"))),
+
+      PT.bonusCard ? PT.bonusCard() : null,
 
       h("section", { class: "stack", style: "gap:10px" },
         h("div", { class: "row" }, h("h2", { style: "margin-right:auto" }, "Conquistas"), h("button", { class: "link", onclick: () => PT.go("perfil") }, "Ver todas")),

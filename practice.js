@@ -83,7 +83,7 @@
       const counter = h("span", { class: "combo num", style: "color:var(--ink-3)" });
       const body = h("div", { class: "stack" });
       root.append(h("div", { class: "stack" },
-        h("div", { class: "lesson-top" }, h("button", { class: "icon-btn", "aria-label": "Sair", html: ICON.close, onclick: () => PT.go(o.back) }), bar, counter),
+        h("div", { class: "lesson-top" }, h("button", { class: "icon-btn", "aria-label": "Sair", html: ICON.close, onclick: () => PT.go(o.back, o.backArg) }), bar, counter),
         h("div", { class: "label" }, o.title), body));
       const onKey = (e) => {
         const typing = e.target.matches && e.target.matches("input, textarea");
@@ -112,13 +112,15 @@
           o.summary ? o.summary(st, items) : h("p", { class: "muted" }, `${st.ok} de ${items.length} certos.`),
           h("div", { class: "stack", style: "width:100%;gap:10px" },
             o.again === false ? null : h("button", { class: "btn block", onclick: () => runSession(o) }, "Mais uma rodada"),
-            h("button", { class: "btn ghost block", onclick: () => PT.go(o.back) }, "Voltar"))));
+            h("button", { class: "btn ghost block", onclick: () => PT.go(o.back, o.backArg) }, "Voltar"))));
       };
       if (!items.length) { body.append(h("p", { class: "muted" }, "Nada por aqui agora."), h("button", { class: "btn ghost", onclick: () => PT.go(o.back) }, "Voltar")); return; }
       next();
     });
   }
 
+  PT.runSession = (o) => runSession(o);
+  PT.feedbackBar = (...a) => feedbackBar(...a);
   function feedbackBar(ok, lines, onNext, st) {
     const cont = h("button", { class: "btn block " + (ok ? "good" : "bad"), onclick: onNext }, "Continuar");
     st.onEnter = onNext;
@@ -311,15 +313,8 @@
         h("button", { class: "tile", onclick: PT.startRepeat, disabled: !tts.ok }, h("span", { class: "e" }, "🗣️"), h("b", {}, "Repita comigo"), h("span", { class: "small muted" }, "Frases do dia a dia em voz alta")),
         h("div", { class: "tile", style: "cursor:default" }, h("span", { class: "e" }, "🎚️"), h("b", {}, "Velocidade"), h("span", { class: "small muted" }, "Todo áudio tem um botão de tartaruga para ouvir devagar."))),
       h("p", { class: "small muted" }, "O microfone não funciona dentro desta página. No “Repita comigo”, você fala em voz alta e dá a sua própria nota."),
-      h("section", { class: "stack", style: "gap:10px" },
-        h("h2", {}, "Sons do português"),
-        PT.SOUNDS.map((s) => h("details", { class: "panel tight" },
-          h("summary", { style: "cursor:pointer;display:flex;gap:12px;align-items:center" },
-            h("span", { style: "font-family:var(--display);font-weight:800;font-size:1.2rem;min-width:5.5em" }, s.t),
-            h("span", { class: "muted small" }, s.ex.slice(0, 3).join(" · "))),
-          h("div", { class: "stack", style: "gap:10px;margin-top:10px" },
-            h("p", { html: md(s.d) }),
-            h("div", { class: "row", style: "gap:6px" }, s.ex.map((w) => h("button", { class: "say", "data-say": w, html: ICON.speak + PT.esc(w) })))))))
+
+      PT.bonusCard()
     ));
   };
 })();

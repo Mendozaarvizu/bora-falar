@@ -64,7 +64,7 @@
     return {
       v: 1, xp: 0, days: {}, lessons: {}, cards: {}, custom: {}, badges: {},
       stats: { answers: 0, correct: 0, reviews: 0, listenOk: 0, dictOk: 0, msgs: 0, evals: 0, bestCombo: 0, ipaOk: 0 },
-      settings: { goal: 150, rate: 1, voice: "", ptNotes: true, name: "" },
+      settings: { goal: 150, rate: 1, voice: "", ptNotes: true, name: "", night: false },
       lastActive: null, updatedAt: 0
     };
   }
@@ -140,6 +140,7 @@
       if (snap.exists) {
         PT.S = merge(PT.S, JSON.parse(JSON.stringify(snap.data())));
         writeLocal();
+        PT.applyTheme();
         PT.loadVoices();
         if (!document.body.classList.contains("focus")) PT.go(PT.tab || "inicio");
         PT.updateHeader();
@@ -149,6 +150,9 @@
     } catch (e) { sync.cloud = false; }
   }
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { clearTimeout(sync.timer); flush(); } });
+
+  // Dia por padrão; noite só quando a pessoa escolhe no Ajustes
+  PT.applyTheme = () => document.documentElement.setAttribute("data-mode", PT.S.settings.night ? "night" : "day");
 
   /* ---------- voz ---------- */
   const tts = { ok: "speechSynthesis" in window, voices: [], voice: null, voicePT: null };
@@ -401,6 +405,8 @@
     const close = PT.modal(h("div", { class: "stack" },
       h("div", { class: "row" }, h("h2", { style: "margin-right:auto" }, "Ajustes"), h("button", { class: "icon-btn", "aria-label": "Fechar", html: ICON.close, onclick: () => close() })),
       h("label", { class: "field" }, h("span", { class: "label" }, "Seu nome (opcional)"), name),
+      h("div", { class: "field" }, h("span", { class: "label" }, "Aparência"),
+        seg([[false, "☀️ Dia"], [true, "🌙 Noite"]], S.settings.night, (v) => { S.settings.night = v; PT.applyTheme(); })),
       h("div", { class: "field" }, h("span", { class: "label" }, "Meta diária"),
         seg([[50, "Leve · 50"], [100, "Normal · 100"], [150, "Sério · 150"], [250, "Intenso · 250"]], S.settings.goal, (v) => (S.settings.goal = v)),
         h("span", { class: "small muted" }, "Para 30 minutos por dia, 150 XP é um bom alvo.")),
@@ -527,6 +533,7 @@
   };
 
   /* ---------- início do app ---------- */
+  PT.applyTheme();
   PT.boot = function () {
     document.querySelectorAll(".nav button").forEach((b) => (b.onclick = () => PT.go(b.dataset.tab)));
     $("#brand").onclick = () => PT.go("inicio");

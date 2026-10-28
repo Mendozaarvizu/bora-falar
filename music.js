@@ -11,7 +11,7 @@
   const POS_KEY = "borafalar.music.pos";
   const audio = new Audio();
   audio.preload = "none";
-  let trackId = null, part = 0, seekTo = 0, ducks = 0, failed = false, lastSave = 0, gesture = null, pop = null;
+  let trackId = null, part = 0, seekTo = 0, failed = false, lastSave = 0, gesture = null, pop = null;
 
   const cfg = () => {
     const s = PT.S.settings;
@@ -33,8 +33,8 @@
   }
 
   /* ---------- tocar ---------- */
-  // O volume é do elemento de áudio, então não mexe no volume do computador. Abaixa enquanto o app fala.
-  const applyVolume = () => { audio.volume = Math.max(0, Math.min(1, cfg().vol * (ducks > 0 ? 0.25 : 1))); };
+  // O volume é do elemento de áudio, então não mexe no volume do computador nem na voz do app.
+  const applyVolume = () => { audio.volume = Math.max(0, Math.min(1, cfg().vol)); };
   function load() {
     const t = track();
     if (trackId === t.id && audio.getAttribute("src")) return;
@@ -94,22 +94,6 @@
   audio.addEventListener("pause", render);
   audio.addEventListener("error", () => { if (audio.getAttribute("src")) { failed = true; render(); } });
   window.addEventListener("pagehide", savePos);
-
-  // Abaixa a música enquanto a voz do app fala
-  const speak0 = PT.speak;
-  PT.speak = function (text, opts) {
-    ducks++;
-    applyVolume();
-    let done = false;
-    const release = () => {
-      if (done) return;
-      done = true;
-      clearTimeout(safety);
-      setTimeout(() => { ducks = Math.max(0, ducks - 1); applyVolume(); }, 250);
-    };
-    const safety = setTimeout(release, 20000);
-    return speak0(text, opts).then((r) => { release(); return r; }, (e) => { release(); throw e; });
-  };
 
   /* ---------- ações ---------- */
   function setOn(v) {
@@ -179,7 +163,7 @@
       h("div", { class: "stack", style: "gap:6px" },
         h("span", { class: "label" }, "Volume da música"),
         h("div", { class: "vol-row" }, h("span", { "aria-hidden": "true" }, "🔈"), vol, h("span", { "aria-hidden": "true" }, "🔊"), out),
-        h("p", { class: "small muted" }, "Vale só para a música do app. O volume do computador não muda. Quando o app fala, a música abaixa sozinha.")),
+        h("p", { class: "small muted" }, "Vale só para a música. A voz do app segue o volume do computador.")),
       h("p", { class: "small music-status", role: "status" }, statusText()));
     $(".top-inner").append(pop);
     $("#music-btn").setAttribute("aria-expanded", "true");

@@ -64,7 +64,7 @@
     return {
       v: 1, xp: 0, days: {}, lessons: {}, cards: {}, custom: {}, badges: {},
       stats: { answers: 0, correct: 0, reviews: 0, listenOk: 0, dictOk: 0, msgs: 0, evals: 0, bestCombo: 0, ipaOk: 0 },
-      settings: { goal: 150, rate: 1, voice: "", ptNotes: true, name: "", night: false },
+      settings: { goal: 150, rate: 1, voice: "", ptNotes: true, name: "", night: false, music: { on: false, track: "bossa", vol: 0.4 } },
       lastActive: null, updatedAt: 0
     };
   }
@@ -141,6 +141,7 @@
         PT.S = merge(PT.S, JSON.parse(JSON.stringify(snap.data())));
         writeLocal();
         PT.applyTheme();
+        if (PT.music) PT.music.refresh();
         PT.loadVoices();
         if (!document.body.classList.contains("focus")) PT.go(PT.tab || "inicio");
         PT.updateHeader();
@@ -542,6 +543,7 @@
     PT.loadVoices();
     if (tts.ok) { try { speechSynthesis.addEventListener("voiceschanged", PT.loadVoices); } catch (e) { speechSynthesis.onvoiceschanged = PT.loadVoices; } }
     PT.go((location.hash || "").slice(1) || "inicio");
+    if (PT.music) PT.music.init();
     connect();
   };
 })();

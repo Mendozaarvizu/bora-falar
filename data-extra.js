@@ -102,6 +102,7 @@ PT.SCENES = [
 PT.BADGES = [
   { id: "primeira", e: "🌱", t: "Primeiro passo", d: "Complete sua primeira lição." },
   { id: "cinco", e: "📚", t: "Pegando o jeito", d: "Complete 5 lições diferentes." },
+  { id: "quinze", e: "🎓", t: "Estudante dedicado", d: "Complete 15 lições diferentes." },
   { id: "trilha", e: "🏆", t: "Trilha completa", d: "Complete todas as lições da trilha." },
   { id: "perfeito", e: "⭐", t: "Sem errar nada", d: "Termine uma lição sem nenhum erro." },
   { id: "combo10", e: "⚡", t: "Pegando fogo", d: "Acerte 10 seguidas numa lição." },

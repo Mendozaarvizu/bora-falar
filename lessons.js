@@ -11,7 +11,9 @@
     try { const m = readOpen(); m[id] = open; localStorage.setItem(OPEN_KEY, JSON.stringify(m)); } catch (e) { /* sem armazenamento local */ }
   }
   const isDone = (l) => !!(PT.S.lessons[l.id] || {}).done;
-  PT.currentLevel = () => PT.LEVELS.find((L) => L.units.some((u) => u.lessons.some((l) => !isDone(l)))) || PT.LEVELS[0];
+  // O seu nível no QECR: o primeiro nível que ainda não está completo. Um nível só com parte das unidades
+  // prontas ("partial") segura você nele; um nível sem unidades quer dizer que você já passou do anterior.
+  PT.currentLevel = () => PT.LEVELS.find((L) => L.partial || !L.units.length || L.units.some((u) => u.lessons.some((l) => !isDone(l)))) || PT.LEVELS[PT.LEVELS.length - 1];
 
   PT.views.trilha = function (root) {
     const nl = PT.nextLesson(), saved = readOpen(), cur = PT.currentLevel();

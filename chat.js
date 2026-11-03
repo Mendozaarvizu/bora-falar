@@ -26,18 +26,50 @@
     const ks = [...new Set(Object.keys(PT.S.cards).map((id) => id.split("|")[0]))].filter((k) => m[k]);
     return ks.slice(-40).map((k) => m[k].w).join(", ") || "saudações, família, comida";
   }
+  // Como a IA fala e corrige em cada nível do QECR. O nível vem da trilha (PT.currentLevel).
+  const STYLE = {
+    A1: {
+      talk: "Use só o presente, ir + verbo (vou viajar) e o passado mais comum (fui, fiz, comi, gostei). Frases curtas, de até 8 palavras, e no máximo 2 frases por resposta. Vocabulário do dia a dia: família, casa, comida, rotina, números, horas, compras. Faça perguntas simples, de sim ou não ou de escolha (você prefere praia ou montanha?). Nada de gíria além de tá, pra, a gente e né.",
+      fix: "Corrija no máximo 2 erros por mensagem: os que atrapalham o sentido e os básicos (gênero, ser e estar, conjugação no presente). Ignore detalhes de estilo."
+    },
+    A2: {
+      talk: "Use o presente, o passado (perfeito e imperfeito), ir + verbo, o imperativo simples e comparações. Frases curtas e no máximo 3 frases por resposta, com vocabulário frequente. Pode usar expressões comuns e um pouco de gíria leve, que dê para entender pelo contexto.",
+      fix: "Corrija até 3 erros por mensagem, começando pelos mais importantes."
+    },
+    B1: {
+      talk: "Use todos os tempos do indicativo e o subjuntivo mais comum (espero que, quando você puder, se eu fosse). Use conectores (porque, então, mas, mesmo assim). No máximo 4 frases por resposta. Pergunte opiniões e experiências e peça para o aluno explicar o porquê.",
+      fix: "Corrija todos os erros de gramática e, quando ajudar, mostre um jeito mais natural de dizer."
+    },
+    B2: {
+      talk: "Fale com naturalidade, como com um amigo brasileiro: subjuntivo, expressões idiomáticas e gíria comum. Até 5 frases por resposta. Traga pontos de vista diferentes e debata com o aluno.",
+      fix: "Corrija todos os erros, inclusive de naturalidade, de registro e de expressões."
+    },
+    C1: {
+      talk: "Fale como com um falante nativo: ritmo natural, expressões idiomáticas, ironia leve e referências culturais brasileiras. Respostas do tamanho que a conversa pedir.",
+      fix: "Corrija tudo o que um nativo estranharia, mesmo os detalhes."
+    },
+    C2: {
+      talk: "Fale como com um falante nativo culto: nuances, mudanças de registro, humor e referências culturais. Respostas do tamanho que a conversa pedir.",
+      fix: "Corrija tudo o que um nativo estranharia, mesmo os detalhes mínimos de estilo."
+    }
+  };
+  const level = () => PT.currentLevel();
+  const style = () => STYLE[level().id] || STYLE.A2;
+  // Para "Mais simples": um nível abaixo do seu, nunca abaixo do A1.
+  const easier = () => { const i = PT.LEVELS.indexOf(level()); return PT.LEVELS[Math.max(0, i - 1)].id; };
+
   function rules(scene) {
-    const name = PT.S.settings.name;
-    return `Você é um parceiro de conversa para um aluno de português do Brasil de nível básico (A2). O aluno fala espanhol.${name ? ` O nome do aluno é ${name}.` : ""} Você não sabe o gênero do aluno: evite formas marcadas por gênero até ele indicar.
+    const name = PT.S.settings.name, L = level(), st = style();
+    return `Você é um parceiro de conversa para um aluno de português do Brasil de nível ${L.id} (${L.t}) do Quadro Europeu Comum de Referência (QECR). O aluno fala espanhol.${name ? ` O nome do aluno é ${name}.` : ""} Você não sabe o gênero do aluno: evite formas marcadas por gênero até ele indicar.
 
 PERSONAGEM E CENA: ${scene.role}
 
 REGRAS:
 1. Responda SEMPRE e SOMENTE em português do Brasil. Nunca use inglês nem espanhol, mesmo que o aluno escreva em outra língua (nesse caso, peça com carinho para ele tentar em português).
 2. Fale como uma pessoa real nessa cena: natural, informal, com expressões brasileiras comuns (a gente, tá, pra, né).
-3. Frases curtas e simples: no máximo 3 frases por resposta, vocabulário frequente. Quase sempre termine com uma pergunta para a conversa continuar.
+3. Nível ${L.id}: ${st.talk} Quase sempre termine com uma pergunta para a conversa continuar.
 4. Palavras que o aluno está estudando (use algumas quando fizer sentido): ${studyWords()}.
-5. Depois da sua fala, escreva uma linha só com ### e, abaixo dela, a correção da ÚLTIMA mensagem do aluno, em português simples:
+5. Depois da sua fala, escreva uma linha só com ### e, abaixo dela, a correção da ÚLTIMA mensagem do aluno, em português simples. ${st.fix}
    - Para cada erro: ❌ trecho errado → ✅ forma certa — explicação curta (máximo 12 palavras).
    - Se o erro vier do espanhol, escreva "portunhol" na explicação.
    - Se estiver tudo certo: ✅ Perfeito! E, se ajudar, uma linha 💡 com um jeito mais natural de dizer.
@@ -57,8 +89,12 @@ Formato exato:
   /* ---------- lista de cenas ---------- */
   PT.views.conversa = function (root) {
     const note = h("div", { class: "notice", hidden: true });
+    const L = level(), next = PT.LEVELS[PT.LEVELS.indexOf(L) + 1];
     root.append(h("div", { class: "stack" },
       h("div", {}, h("h1", {}, "Conversa"), h("p", { class: "muted" }, "Converse com a IA num cenário real. Ela responde só em português e corrige cada mensagem sua.")),
+      h("div", { class: "lv-line", style: `--lv:${L.c}` },
+        h("span", { class: "lv-chip" }, `${L.id} · ${L.t}`),
+        h("span", { class: "small muted" }, `A IA fala e corrige no seu nível da trilha.${next && !L.partial && L.units.length ? ` Quando você completar o ${L.id}, ela passa para o ${next.id}.` : ""}`)),
       note,
       h("div", { class: "stack", style: "gap:10px" }, PT.SCENES.map((s) => {
         const saved = load(s.id), n = saved ? saved.msgs.filter((m) => m.role === "user").length : 0;
@@ -95,7 +131,7 @@ Formato exato:
       h("div", { class: "row", style: "flex-wrap:nowrap" },
         h("button", { class: "icon-btn", "aria-label": "Voltar", html: ICON.back, onclick: () => { if (ctl) ctl.abort(); PT.go("conversa"); } }),
         h("span", { style: "font-size:1.8rem" }, scene.e),
-        h("div", { style: "flex:1;min-width:0" }, h("h2", {}, scene.t), h("div", { class: "small muted" }, `com ${scene.who}`)),
+        h("div", { style: "flex:1;min-width:0" }, h("h2", {}, scene.t), h("div", { class: "small muted" }, `com ${scene.who} · nível ${level().id}`)),
         h("button", { class: "link small", onclick: () => PT.confirm("Recomeçar a conversa?", "As mensagens desta conversa vão sumir.", "Recomeçar", () => { drop(scene.id); PT.startChat(scene.id); }) }, "Recomeçar")),
       h("div", { class: "ctx" }, "🎬 ", scene.d),
       list,
@@ -171,7 +207,9 @@ Formato exato:
       if (!sample) return;
       btn.disabled = true; btn.textContent = "Pensando…";
       try {
-        const { text } = await sample(`Reescreva esta fala em português do Brasil bem simples (nível A1), com palavras muito comuns e frases curtas. Não traduza para outra língua. Responda só com a fala reescrita.\n\nFala: "${m.content}"`, { modelTier: "quick" });
+        const target = easier();
+        const how = target === "A1" ? "bem simples (nível A1), com palavras muito comuns e frases de até 6 palavras" : `mais simples (nível ${target}), com palavras mais comuns e frases mais curtas`;
+        const { text } = await sample(`Reescreva esta fala em português do Brasil ${how}. Não traduza para outra língua. Responda só com a fala reescrita.\n\nFala: "${m.content}"`, { modelTier: "quick" });
         m.simple = text.trim(); save(); draw();
       } catch (e) { btn.disabled = false; btn.textContent = "Mais simples"; say(null, errCopy(e)); }
     }
@@ -181,7 +219,7 @@ Formato exato:
       helpBtn.disabled = true;
       PT.put(sugs, h("span", { class: "small muted" }, "Pensando em ideias…"));
       try {
-        const arr = await sample.json(`Cena: ${scene.role}\n\nConversa até agora:\n${transcript(convo.msgs.slice(-8), scene)}\n\nSugira 3 respostas curtas (máximo 12 palavras cada) que o ALUNO poderia mandar agora, em português do Brasil simples e natural (nível A2). Responda só com um array JSON de 3 strings.`, { modelTier: "quick", cache: false });
+        const arr = await sample.json(`Cena: ${scene.role}\n\nConversa até agora:\n${transcript(convo.msgs.slice(-8), scene)}\n\nSugira 3 respostas curtas (máximo 12 palavras cada) que o ALUNO poderia mandar agora, em português do Brasil natural, que um aluno de nível ${level().id} do QECR consiga escrever. Responda só com um array JSON de 3 strings.`, { modelTier: "quick", cache: false });
         const list3 = (Array.isArray(arr) ? arr : []).map(String).filter(Boolean).slice(0, 3);
         PT.put(sugs, ...list3.map((s) => h("button", { type: "button", onclick: () => { ta.value = s; ta.focus(); } }, s)));
       } catch (e) { PT.put(sugs); say(null, errCopy(e)); }
@@ -195,10 +233,10 @@ Formato exato:
       const box = h("div", { class: "stack" }, h("h2", {}, "Avaliação"), h("p", { class: "muted" }, h("span", { class: "thinking" }, h("i"), h("i"), h("i")), " A professora está lendo a conversa… (pode levar até um minuto)"));
       const close = PT.modal(box);
       try {
-        const r = await sample.json(`Você é professor de português do Brasil. Avalie as mensagens do ALUNO nesta conversa (nível A2; o aluno fala espanhol). Escreva tudo em português simples, sem traduções.
+        const r = await sample.json(`Você é professor de português do Brasil. Avalie as mensagens do ALUNO nesta conversa. O aluno está no nível ${level().id} do QECR e fala espanhol: compare com o que se espera de um aluno ${level().id} e escreva tudo em português ${level().id === "A1" ? "muito simples" : "simples"}, sem traduções.
 Responda só com JSON neste formato:
 {"resumo": "2 frases de avaliação geral, com carinho", "bom": ["até 3 pontos fortes"], "melhorar": ["até 3 pontos para melhorar, cada um com o exemplo certo"], "palavras": [{"w": "palavra ou expressão útil", "e": "um emoji", "d": "definição simples em português", "x": "frase curta de exemplo"}]}
-Em "palavras", inclua de 3 a 5 palavras ou expressões úteis para esta cena que o aluno ainda não usa bem.
+Em "palavras", inclua de 3 a 5 palavras ou expressões úteis para esta cena, adequadas ao nível ${level().id}, que o aluno ainda não usa bem.
 
 Conversa:
 ${transcript(convo.msgs.slice(-30), scene)}`, { cache: false });

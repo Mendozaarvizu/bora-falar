@@ -198,10 +198,14 @@
         : h("section", { class: "panel stack" },
           h("p", {}, "Você ainda não tem cartões. Cada lição completa adiciona as palavras dela aqui."),
           h("button", { class: "btn", onclick: () => PT.go("trilha") }, "Ir para a trilha")),
-      Object.entries(groups).map(([g, ks]) => h("section", { class: "stack", style: "gap:8px" },
-        h("h3", {}, g),
-        h("div", { class: "words" }, ks.map((k) => h("button", { class: "wchip s" + PT.srs.strength(k), type: "button", "data-say": m[k].w, title: m[k].d }, h("i"), h("span", {}, m[k].e), m[k].w))))),
-      keys.length ? h("p", { class: "small muted" }, "● amarelo: aprendendo · ● verde claro: firme · ● verde: dominada. Toque numa palavra para ouvir.") : null
+      // As palavras de cada lição ficam escondidas até você abrir o grupo, para não entregar as respostas.
+      keys.length ? h("div", { class: "stack", style: "gap:8px" }, Object.entries(groups).map(([g, ks]) => h("details", { class: "wgroup" },
+        h("summary", {},
+          h("span", { class: "stack", style: "gap:0;flex:1;min-width:0" }, h("h3", {}, g), h("small", { class: "muted" }, `${ks.length} ${ks.length === 1 ? "palavra" : "palavras"}`)),
+          h("span", { class: "dots", "aria-hidden": "true" }, ks.map((k) => h("i", { class: "s" + PT.srs.strength(k) }))),
+          h("span", { class: "chev", "aria-hidden": "true", html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>' })),
+        h("div", { class: "words" }, ks.map((k) => h("button", { class: "wchip s" + PT.srs.strength(k), type: "button", "data-say": m[k].w, title: m[k].d }, h("i"), h("span", {}, m[k].e), m[k].w)))))) : null,
+      keys.length ? h("p", { class: "small muted" }, "● amarelo: aprendendo · ● verde claro: firme · ● verde: dominada. Toque numa lição para ver as palavras e numa palavra para ouvir.") : null
     ));
   };
 

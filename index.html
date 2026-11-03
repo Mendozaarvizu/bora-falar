@@ -269,6 +269,19 @@ body.focus main { padding-bottom: 32px; }
 .wchip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: .9rem; }
 .wchip i { width: 8px; height: 8px; border-radius: 999px; background: var(--line); margin-left: 6px; }
 .wchip.s1 i { background: var(--gold); } .wchip.s2 i { background: color-mix(in srgb, var(--good) 60%, var(--gold)); } .wchip.s3 i { background: var(--good); }
+.wgroup { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.wgroup summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; cursor: pointer; border-radius: 14px; }
+.wgroup summary::-webkit-details-marker { display: none; }
+.wgroup summary h3 { font-size: 1rem; overflow-wrap: anywhere; }
+.wgroup summary:hover { background: var(--surface-2); }
+.wgroup .dots { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; max-width: 38%; }
+.wgroup .dots i { width: 7px; height: 7px; border-radius: 999px; background: var(--line); }
+.wgroup .dots i.s1 { background: var(--gold); } .wgroup .dots i.s2 { background: color-mix(in srgb, var(--good) 60%, var(--gold)); } .wgroup .dots i.s3 { background: var(--good); }
+.wgroup .chev { display: grid; color: var(--ink-3); transition: transform .2s; }
+.wgroup .chev svg { width: 18px; height: 18px; }
+.wgroup[open] .chev { transform: rotate(90deg); }
+.wgroup[open] summary { border-radius: 14px 14px 0 0; }
+.wgroup .words { padding: 2px 14px 14px; }
 
 /* ---------- conversa ---------- */
 .scene { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }

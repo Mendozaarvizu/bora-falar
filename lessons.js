@@ -118,6 +118,7 @@
         api.setReady(answer.length > 0);
       };
       draw();
+      setTimeout(() => PT.speak(s.s), 250);
       return {
         el: h("div", { class: "stack" }, h("div", { class: "prompt" }, "Monte a frase"),
           h("div", { class: "row", style: "flex-wrap:nowrap;align-items:flex-start" }, PT.tts.ok ? PT.speakBtn(s.s) : null, h("div", { class: "ctx" }, "💭 ", s.ctx)),

@@ -210,6 +210,27 @@ body.focus main { padding-bottom: 32px; }
 .node .stars { font-size: .8rem; letter-spacing: 1px; color: var(--gold-deep); height: 1em; }
 .node .go { position: absolute; top: -6px; z-index: 1; background: var(--u); color: #fff; font-size: .68rem; font-weight: 700; padding: 3px 8px; border-radius: 8px; letter-spacing: .06em; text-transform: uppercase; }
 @keyframes bob { 50% { transform: translateY(-4px); } }
+.cefr > summary { list-style: none; display: flex; align-items: center; gap: 14px; padding: 14px 12px 14px 14px; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 3px 0 var(--line); }
+.cefr > summary::-webkit-details-marker { display: none; }
+.cefr > summary:hover { background: var(--surface-2); }
+.lv-badge { flex: none; width: 56px; height: 56px; border-radius: 16px; background: var(--lv); color: #fff; display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: 1.35rem; box-shadow: 0 4px 0 color-mix(in srgb, var(--lv) 60%, #000); }
+.cefr.soon .lv-badge { background: var(--surface-2); color: var(--ink-3); box-shadow: 0 4px 0 var(--line); }
+.lv-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lv-top { display: flex; align-items: baseline; gap: 8px; }
+.lv-name { font-family: var(--display); font-weight: 600; font-size: 1.2rem; line-height: 1.15; }
+.lv-count { margin-left: auto; font-size: .8rem; font-weight: 800; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lv-soon { margin-left: auto; font-size: .66rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); background: var(--surface-2); border-radius: 8px; padding: 3px 8px; white-space: nowrap; }
+.lv-desc { font-size: .88rem; color: var(--ink-2); line-height: 1.35; }
+.lv-bar { height: 8px; margin-top: 6px; }
+.lv-bar > i { background: var(--lv); }
+.lv-body { display: flex; flex-direction: column; gap: 22px; padding: 18px 0 8px; }
+.lv-can { border-left: 4px solid var(--lv); background: var(--surface); border-radius: 0 14px 14px 0; padding: 12px 14px; }
+.cefr.soon .lv-can { border-left-color: var(--line); }
+.lv-can ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: .92rem; }
+.lv-can li { display: flex; gap: 8px; }
+.lv-can li::before { content: "✓"; color: var(--lv); font-weight: 800; }
+.cefr.soon .lv-can li::before { content: "•"; color: var(--ink-3); }
+.lv-note { text-align: center; color: var(--ink-3); font-size: .9rem; border: 2px dashed var(--line); border-radius: var(--r); padding: 14px; }
 
 /* ---------- lição ---------- */
 .lesson-top { display: flex; align-items: center; gap: 12px; }
@@ -277,9 +298,9 @@ body.focus main { padding-bottom: 32px; }
 .wgroup .dots { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; max-width: 38%; }
 .wgroup .dots i { width: 7px; height: 7px; border-radius: 999px; background: var(--line); }
 .wgroup .dots i.s1 { background: var(--gold); } .wgroup .dots i.s2 { background: color-mix(in srgb, var(--good) 60%, var(--gold)); } .wgroup .dots i.s3 { background: var(--good); }
-.wgroup .chev { display: grid; color: var(--ink-3); transition: transform .2s; }
-.wgroup .chev svg { width: 18px; height: 18px; }
-.wgroup[open] .chev { transform: rotate(90deg); }
+.chev { flex: none; display: grid; color: var(--ink-3); transition: transform .2s; }
+.chev svg { width: 18px; height: 18px; }
+details[open] > summary .chev { transform: rotate(90deg); }
 .wgroup[open] summary { border-radius: 14px 14px 0 0; }
 .wgroup .words { padding: 2px 14px 14px; }
 
@@ -429,6 +450,8 @@ body.focus main { padding-bottom: 32px; }
 <script charset="utf-8" src="data-licoes-2.js"></script>
 <script charset="utf-8" src="data-licoes-3.js"></script>
 <script charset="utf-8" src="data-licoes-4.js"></script>
+<script charset="utf-8" src="data-licoes-5.js"></script>
+<script charset="utf-8" src="data-niveis.js"></script>
 <script charset="utf-8" src="data-extra.js"></script>
 <script charset="utf-8" src="core.js"></script>
 <script charset="utf-8" src="lessons.js"></script>

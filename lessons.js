@@ -4,33 +4,69 @@
   const { h, md, shuffle, pick, norm, stripAcc, ICON } = PT;
 
   /* ---------- trilha ---------- */
+  // Quais níveis ficam abertos é uma conveniência deste navegador; sem escolha salva, abre o nível atual.
+  const OPEN_KEY = "borafalar.trilha.niveis";
+  const readOpen = () => { try { return JSON.parse(localStorage.getItem(OPEN_KEY) || "{}"); } catch (e) { return {}; } };
+  function saveOpen(id, open) {
+    try { const m = readOpen(); m[id] = open; localStorage.setItem(OPEN_KEY, JSON.stringify(m)); } catch (e) { /* sem armazenamento local */ }
+  }
+  const isDone = (l) => !!(PT.S.lessons[l.id] || {}).done;
+  PT.currentLevel = () => PT.LEVELS.find((L) => L.units.some((u) => u.lessons.some((l) => !isDone(l)))) || PT.LEVELS[0];
+
   PT.views.trilha = function (root) {
-    const S = PT.S, nl = PT.nextLesson();
+    const nl = PT.nextLesson(), saved = readOpen(), cur = PT.currentLevel();
     root.append(h("div", { class: "stack" },
-      h("div", {}, h("h1", {}, "Trilha"), h("p", { class: "muted" }, `${PT.lessonsDone()} de ${PT.allLessons().length} lições completas. Você pode fazer em qualquer ordem.`)),
-      PT.UNITS.map((u, i) => {
-        const done = u.lessons.filter((l) => (S.lessons[l.id] || {}).done).length;
-        return h("section", { class: "unit", style: `--u:${u.c}` },
-          h("div", { class: "unit-head" }, h("span", { class: "e", "aria-hidden": "true" }, u.e),
-            h("div", {}, h("div", { class: "label" }, `Unidade ${i + 1} · ${done}/${u.lessons.length}`), h("h2", {}, u.t))),
-          h("div", { class: "path" }, u.lessons.map((l, j) => {
-            const st = S.lessons[l.id] || {}, isNext = nl.id === l.id && !st.done;
-            const off = [0, 56, 0, -56][(j + i) % 4];
-            return h("button", { class: "node" + (st.done ? " done" : "") + (isNext ? " next" : ""), style: `transform:translateX(${off}px)`, onclick: () => lessonSheet(l, u) },
-              isNext ? h("span", { class: "go" }, "Começar") : null,
-              h("span", { class: "disc", "aria-hidden": "true" }, l.e),
-              h("span", { class: "name" }, l.t),
-              h("span", { class: "stars", "aria-label": st.done ? `${st.stars} estrelas` : "" }, st.done ? "★".repeat(st.stars) + "☆".repeat(3 - st.stars) : ""));
-          })));
-      })));
+      h("div", {}, h("h1", {}, "Trilha"),
+        h("p", { class: "muted" }, `Organizada pelos níveis do Quadro Europeu Comum de Referência, do A1 ao C2. ${PT.lessonsDone()} de ${PT.allLessons().length} lições completas. Você pode fazer em qualquer ordem.`)),
+      PT.LEVELS.map((L) => levelSection(L, L.id in saved ? saved[L.id] : L === cur, nl, cur))));
   };
+
+  function levelSection(L, open, nl, cur) {
+    const lessons = L.units.flatMap((u) => u.lessons), soon = !lessons.length;
+    const done = lessons.filter(isDone).length;
+    const before = PT.LEVELS[PT.LEVELS.indexOf(L) - 1];
+    const det = h("details", { class: "cefr" + (soon ? " soon" : ""), style: `--lv:${L.c}` },
+      h("summary", {},
+        h("span", { class: "lv-badge", "aria-hidden": "true" }, L.id),
+        h("span", { class: "lv-text" },
+          h("span", { class: "lv-top" }, h("span", { class: "lv-name" }, `${L.id} · ${L.t}`),
+            soon ? h("span", { class: "lv-soon" }, "Em breve") : h("span", { class: "lv-count" }, `${done}/${lessons.length}`)),
+          h("span", { class: "lv-desc" }, L.d),
+          soon ? null : h("span", { class: "bar lv-bar", role: "img", "aria-label": `${done} de ${lessons.length} lições` }, h("i", { style: `width:${Math.round((done / lessons.length) * 100)}%` }))),
+        h("span", { class: "chev", "aria-hidden": "true", html: ICON.chev })),
+      h("div", { class: "lv-body" },
+        h("div", { class: "lv-can" }, h("div", { class: "label" }, soon ? `No ${L.id}, você vai aprender a:` : `No fim do ${L.id}, você consegue:`), h("ul", {}, L.can.map((c) => h("li", {}, c)))),
+        !soon && before && before.units.length && cur === before ? h("p", { class: "small muted", style: "text-align:center" }, `Dica: termine o ${before.id} antes. Mas você pode fazer qualquer lição.`) : null,
+        L.units.map((u, i) => unitSection(u, i, nl)),
+        soon ? h("div", { class: "lv-note" }, `🚧 O nível ${L.id} ainda está em construção.`)
+          : L.partial ? h("div", { class: "lv-note" }, `🚧 Mais unidades do ${L.id} em breve.`) : null));
+    det.open = open;
+    det.addEventListener("toggle", () => saveOpen(L.id, det.open));
+    return det;
+  }
+
+  function unitSection(u, i, nl) {
+    const S = PT.S, done = u.lessons.filter(isDone).length;
+    return h("section", { class: "unit", style: `--u:${u.c}` },
+      h("div", { class: "unit-head" }, h("span", { class: "e", "aria-hidden": "true" }, u.e),
+        h("div", {}, h("div", { class: "label" }, `${u.lvl} · Unidade ${i + 1} · ${done}/${u.lessons.length}`), h("h2", {}, u.t))),
+      h("div", { class: "path" }, u.lessons.map((l, j) => {
+        const st = S.lessons[l.id] || {}, isNext = nl.id === l.id && !st.done;
+        const off = [0, 56, 0, -56][(j + i) % 4];
+        return h("button", { class: "node" + (st.done ? " done" : "") + (isNext ? " next" : ""), style: `transform:translateX(${off}px)`, onclick: () => lessonSheet(l, u) },
+          isNext ? h("span", { class: "go" }, "Começar") : null,
+          h("span", { class: "disc", "aria-hidden": "true" }, l.e),
+          h("span", { class: "name" }, l.t),
+          h("span", { class: "stars", "aria-label": st.done ? `${st.stars} estrelas` : "" }, st.done ? "★".repeat(st.stars) + "☆".repeat(3 - st.stars) : ""));
+      })));
+  }
 
   function lessonSheet(l, u) {
     const st = PT.S.lessons[l.id] || {};
     const close = PT.modal(h("div", { class: "stack", style: `--u:${u.c}` },
       h("div", { class: "row" },
         h("span", { style: "font-size:2.6rem;line-height:1" }, l.e),
-        h("div", { style: "flex:1" }, h("div", { class: "label" }, u.t), h("h2", {}, l.t)),
+        h("div", { style: "flex:1" }, h("div", { class: "label" }, `${u.lvl} · ${u.t}`), h("h2", {}, l.t)),
         h("button", { class: "icon-btn", "aria-label": "Fechar", html: ICON.close, onclick: () => close() })),
       st.done ? h("p", { class: "muted" }, `${"★".repeat(st.stars)}${"☆".repeat(3 - st.stars)} · feita ${st.done}× · praticar de novo vale XP.`) : h("p", { class: "muted" }, "Explicação, 8 palavras novas e cerca de 14 exercícios."),
       h("div", { class: "words" }, l.v.map((v) => h("span", { class: "wchip" }, h("span", {}, v[1]), v[0]))),
@@ -222,7 +258,7 @@
       next.onclick = words;
       onEnter = words;
       PT.put(body, 
-        h("div", {}, h("div", { class: "label" }, `${L.unit.t} · lição`), h("h1", {}, L.t)),
+        h("div", {}, h("div", { class: "label" }, `${L.unit.lvl} · ${L.unit.t} · lição`), h("h1", {}, L.t)),
         h("div", { class: "panel explain" }, L.ex.map((p) => h("p", { html: md(p) }))),
         L.pt && S.settings.ptNotes ? h("div", { class: "pt-note", html: "🇵🇹 " + md(L.pt) }) : null,
         next,

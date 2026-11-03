@@ -27,6 +27,7 @@
   const ICON = {
     speak: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
     slow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16c0-5 3.5-9 8-9s6 3 6 6-2 3-4 3H4z"/><path d="M18 13h2.5a1.5 1.5 0 0 0 0-3H19"/><path d="M7 16v3M13 16v3"/></svg>',
+    chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>'
   };
@@ -247,6 +248,7 @@
     const S = PT.S, n = PT.lessonsDone(), st = S.stats, sk = PT.streak(), lv = PT.levelOf(S.xp);
     const rules = {
       primeira: n >= 1, cinco: n >= 5, quinze: n >= 15, trilha: n >= PT.allLessons().length,
+      nivelA1: PT.LEVELS[0].units.every((u) => u.lessons.every((l) => (S.lessons[l.id] || {}).done)),
       dias3: sk >= 3, dias7: sk >= 7, dias30: sk >= 30,
       cartoes50: st.reviews >= 50, cartoes500: st.reviews >= 500,
       ouvido: st.listenOk >= 25, ditado: st.dictOk >= 20,
@@ -475,7 +477,7 @@
 
       h("section", { class: "next-card", style: `--u:${nl.unit.c}` },
         h("div", {},
-          h("div", { class: "label" }, (S.lessons[nl.id] || {}).done ? "Praticar de novo" : `Próxima lição · ${nl.unit.t}`),
+          h("div", { class: "label" }, (S.lessons[nl.id] || {}).done ? "Praticar de novo" : `Próxima lição · ${nl.unit.lvl} · ${nl.unit.t}`),
           h("h2", {}, nl.t),
           h("button", { class: "btn", onclick: () => PT.startLesson(nl.id) }, (S.lessons[nl.id] || {}).done ? "Praticar" : "Começar lição")),
         h("div", { class: "e", "aria-hidden": "true" }, nl.e)),

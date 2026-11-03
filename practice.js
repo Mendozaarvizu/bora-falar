@@ -203,7 +203,7 @@
         h("summary", {},
           h("span", { class: "stack", style: "gap:0;flex:1;min-width:0" }, h("h3", {}, g), h("small", { class: "muted" }, `${ks.length} ${ks.length === 1 ? "palavra" : "palavras"}`)),
           h("span", { class: "dots", "aria-hidden": "true" }, ks.map((k) => h("i", { class: "s" + PT.srs.strength(k) }))),
-          h("span", { class: "chev", "aria-hidden": "true", html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>' })),
+          h("span", { class: "chev", "aria-hidden": "true", html: ICON.chev })),
         h("div", { class: "words" }, ks.map((k) => h("button", { class: "wchip s" + PT.srs.strength(k), type: "button", "data-say": m[k].w, title: m[k].d }, h("i"), h("span", {}, m[k].e), m[k].w)))))) : null,
       keys.length ? h("p", { class: "small muted" }, "● amarelo: aprendendo · ● verde claro: firme · ● verde: dominada. Toque numa lição para ver as palavras e numa palavra para ouvir.") : null
     ));

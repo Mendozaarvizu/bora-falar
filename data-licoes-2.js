@@ -63,8 +63,34 @@ PT.UNITS.push({
 });
 
 PT.UNITS.push({
-  id: "u4", t: "Cultura", e: "🎶", c: "#2F5BD3",
+  id: "u4", t: "Lazer e cultura", e: "🎶", c: "#2F5BD3",
   lessons: [
+    {
+      id: "t1", t: "No meu tempo livre", e: "🏊",
+      ex: [
+        "Para falar do tempo livre: [[O que você gosta de fazer?]] → **Eu gosto de ler.** · **Eu adoro nadar.** (gostar **de** + verbo)",
+        "Para dizer o que está acontecendo agora: **estar** + verbo com **-ndo**: fal**ando**, com**endo**, dorm**indo**.",
+        "[[O que você está fazendo?]] → **Tô vendo um filme.** · **Tô cozinhando.** · **A gente tá jogando bola.**",
+        "Com que frequência? **todo dia** · **toda semana** · **de vez em quando** · **nos fins de semana**."
+      ],
+      pt: "Em Portugal se usa **estar a** + verbo: **estou a ler**, **estou a cozinhar**. E a academia se chama **ginásio**.",
+      v: [
+        ["ler", "📖", "Olhar e entender as palavras de um livro, de uma revista, de uma tela.", "Eu adoro ler antes de dormir."],
+        ["nadar", "🏊", "Mover o corpo dentro da água.", "No verão a gente nada no mar."],
+        ["correr", "🏃", "Andar muito rápido, como num esporte.", "Eu corro no parque de manhã."],
+        ["cozinhar", "👩‍🍳", "Preparar a comida.", "Meu marido cozinha muito bem."],
+        ["passear", "🚶", "Andar ou sair sem pressa, para se divertir.", "No domingo a gente passeia na praia."],
+        ["academia", "🏋️", "Um lugar para fazer exercício, com pesos e máquinas.", "Vou à academia três vezes por semana.", "Em Portugal: **ginásio**."],
+        ["jogar", "🎮", "Praticar um jogo ou um esporte: futebol, videogame, cartas...", "Os meninos estão jogando videogame."],
+        ["tempo livre", "🧘", "O tempo em que você não trabalha nem estuda.", "O que você faz no seu tempo livre?"]
+      ],
+      s: [
+        ["Eu gosto de ler.", "de", ["a", "en"], "Você fala do que faz no tempo livre."],
+        ["O que você está fazendo?", "fazendo", ["haciendo", "fazer"], "Você liga para uma amiga e quer saber o que ela faz neste momento."],
+        ["Tô vendo um filme.", "vendo", ["viendo", "ver"], "Você está no sofá com a TV ligada."],
+        ["Nos fins de semana eu passeio na praia.", "passeio", ["paseo", "passeia"], "Você fala do seu sábado e do seu domingo."]
+      ]
+    },
     {
       id: "m1", t: "Música brasileira", e: "🥁",
       ex: [

@@ -2,7 +2,7 @@
 (function () {
   const PT = window.PT;
   const { h, md, shuffle, pick, norm, stripAcc, ICON } = PT;
-  const DAY = 864e5, NEW_PER_DAY = 30;
+  const DAY = 864e5, NEW_PER_DAY = 30, KNOWN_DAYS = 60;
   const sod = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
 
   /* ---------- revisão espaçada ---------- */
@@ -89,7 +89,7 @@
         const typing = e.target.matches && e.target.matches("input, textarea");
         if (e.key === "Enter" && st.onEnter) { e.preventDefault(); st.onEnter(); }
         else if (e.key === " " && !typing && st.onSpace) { e.preventDefault(); st.onSpace(); }
-        else if (!typing && /^[1-4]$/.test(e.key) && st.onNum) st.onNum(Number(e.key));
+        else if (!typing && /^[1-5]$/.test(e.key) && st.onNum) st.onNum(Number(e.key));
       };
       document.addEventListener("keydown", onKey);
       PT.cleanup = () => document.removeEventListener("keydown", onKey);
@@ -134,7 +134,7 @@
     runSession({
       title: "Revisão de cartões", back: "cartoes", doneTitle: "Revisão feita!", again: false,
       make: () => PT.srs.queue(),
-      summary: (st) => h("p", { class: "muted" }, `${st.i} cartões revisados. As palavras voltam na hora certa, antes de você esquecer.`),
+      summary: (st) => h("p", { class: "muted" }, `${st.i} cartões revisados${st.known ? ` (${st.known} ${st.known === 1 ? "palavra que você já sabia" : "palavras que você já sabia"})` : ""}. As palavras voltam na hora certa, antes de você esquecer.`),
       render(id, body, done, st, items) {
         const [key, dir] = id.split("|");
         const v = wordMap()[key];
@@ -167,9 +167,31 @@
             if (g === 1) items.splice(Math.min(items.length, st.i + 4), 0, id);
             done({ ok: g > 1, xp: 2 });
           };
+          // "Já sei": a palavra vira dominada nos dois sentidos e só volta daqui a KNOWN_DAYS dias.
+          const known = () => {
+            const isNew = (cid) => !!(PT.S.cards[cid] || {}).n;
+            let freed = isNew(id) ? 1 : 0;
+            for (let j = items.length - 1; j > st.i; j--) {
+              if (items[j].split("|")[0] !== key) continue;
+              if (isNew(items[j])) freed++;
+              items.splice(j, 1);
+            }
+            for (const d of ["r", "p"]) {
+              const cid = `${key}|${d}`;
+              if (PT.S.cards[cid]) PT.S.cards[cid] = { ef: 2.5, reps: 3, lapses: 0, iv: KNOWN_DAYS, due: sod() + KNOWN_DAYS * DAY };
+            }
+            // As palavras novas que saíram da sessão dão lugar às próximas, para a cota do dia não diminuir.
+            const inSession = new Set(items);
+            const pool = Object.keys(PT.S.cards).filter((cid) => PT.S.cards[cid].n && !inSession.has(cid));
+            items.push(...[...pool.filter((cid) => cid.endsWith("|r")), ...pool.filter((cid) => cid.endsWith("|p"))].slice(0, freed));
+            st.known = (st.known || 0) + 1;
+            PT.save();
+            done({ ok: true });
+          };
           PT.put(foot, h("div", { class: "grades" }, [1, 2, 3, 4].map((g) =>
-            h("button", { class: `btn ${cls[g - 1]}`, onclick: () => grade(g) }, names[g - 1], h("small", {}, ivLabel(schedule(c, g)))))));
-          st.onNum = grade; st.onSpace = null; st.onEnter = () => grade(3);
+            h("button", { class: `btn ${cls[g - 1]}`, onclick: () => grade(g) }, names[g - 1], h("small", {}, ivLabel(schedule(c, g))))),
+            h("button", { class: "btn known", title: "Você já conhece esta palavra: ela vira dominada e só volta para revisão daqui a 2 meses.", onclick: known }, "Já sei", h("small", {}, ivLabel({ iv: KNOWN_DAYS })))));
+          st.onNum = (n) => (n === 5 ? known() : grade(n)); st.onSpace = null; st.onEnter = () => grade(3);
         };
         reveal.onclick = back;
         st.onSpace = back; st.onEnter = back;
@@ -194,7 +216,7 @@
           h("div", { class: "stat" }, h("b", {}, mastered), h("span", {}, "dominadas"))),
         n ? h("button", { class: "btn block", onclick: PT.startReview }, `Revisar agora · ${n}`)
           : h("p", { class: "muted", style: "text-align:center" }, "Tudo em dia! Volte amanhã ou faça uma lição nova."),
-        h("p", { class: "small muted" }, "Atalhos: espaço mostra a resposta, 1–4 escolhe a nota."))
+        h("p", { class: "small muted" }, "Atalhos: espaço mostra a resposta, 1–4 escolhe a nota e 5 é “Já sei”, para palavras que você já conhece."))
         : h("section", { class: "panel stack" },
           h("p", {}, "Você ainda não tem cartões. Cada lição completa adiciona as palavras dela aqui."),
           h("button", { class: "btn", onclick: () => PT.go("trilha") }, "Ir para a trilha")),

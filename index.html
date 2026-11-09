@@ -230,6 +230,25 @@ body.focus main { padding-bottom: 32px; }
 .lv-can li { display: flex; gap: 8px; }
 .lv-can li::before { content: "✓"; color: var(--lv); font-weight: 800; }
 .cefr.soon .lv-can li::before { content: "•"; color: var(--ink-3); }
+.lv-extra { font-size: .78rem; font-weight: 700; color: var(--ink-3); margin-top: 4px; }
+.lv-path { display: flex; flex-direction: column; gap: 22px; }
+.lv-path[hidden] { display: none; }
+.path-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.path-pick button { --tk: var(--lv); text-align: left; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 3px 0 var(--line); }
+.path-pick button:hover { background: var(--surface-2); }
+.path-pick button[aria-pressed="true"] { border-color: var(--tk); background: color-mix(in srgb, var(--tk) 12%, var(--surface)); box-shadow: 0 3px 0 color-mix(in srgb, var(--tk) 55%, var(--line)); }
+.pp-name { font-family: var(--display); font-weight: 600; font-size: 1.02rem; }
+.pp-sub { font-size: .78rem; font-weight: 700; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.track-intro { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--lv); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.track-intro .track-e { font-size: 2rem; line-height: 1; }
+.track-intro h2 { font-size: 1.2rem; }
+.track-intro .lv-count { margin-left: 8px; }
+.unit-d { font-size: .82rem; color: rgba(255,255,255,.85); margin-top: 3px; line-height: 1.3; }
+.unit-scenes { display: flex; flex-direction: column; gap: 8px; }
+.unit-scenes .scene { padding: 10px 14px; align-items: center; }
+.unit-scenes .scene .e { font-size: 1.6rem; }
+.scene-group summary { padding: 12px 14px; }
+.scene-list { gap: 10px; padding: 4px 12px 12px; }
 .lv-note { text-align: center; color: var(--ink-3); font-size: .9rem; border: 2px dashed var(--line); border-radius: var(--r); padding: 14px; }
 
 /* ---------- lição ---------- */
@@ -455,6 +474,9 @@ details[open] > summary .chev { transform: rotate(90deg); }
 <script charset="utf-8" src="data-licoes-4.js"></script>
 <script charset="utf-8" src="data-licoes-5.js"></script>
 <script charset="utf-8" src="data-licoes-6.js"></script>
+<script charset="utf-8" src="data-berlitz-1.js"></script>
+<script charset="utf-8" src="data-berlitz-2.js"></script>
+<script charset="utf-8" src="data-berlitz-3.js"></script>
 <script charset="utf-8" src="data-niveis.js"></script>
 <script charset="utf-8" src="data-extra.js"></script>
 <script charset="utf-8" src="core.js"></script>

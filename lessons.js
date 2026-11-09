@@ -10,16 +10,24 @@
   function saveOpen(id, open) {
     try { const m = readOpen(); m[id] = open; localStorage.setItem(OPEN_KEY, JSON.stringify(m)); } catch (e) { /* sem armazenamento local */ }
   }
+  // Num nível com caminho opcional, qual caminho aparece (principal ou opcional) também é deste navegador.
+  const PATH_KEY = "borafalar.trilha.caminho";
+  const readPath = () => { try { return JSON.parse(localStorage.getItem(PATH_KEY) || "{}"); } catch (e) { return {}; } };
+  function savePath(lv, id) {
+    try { const m = readPath(); m[lv] = id; localStorage.setItem(PATH_KEY, JSON.stringify(m)); } catch (e) { /* sem armazenamento local */ }
+  }
   const isDone = (l) => !!(PT.S.lessons[l.id] || {}).done;
+  const unitLabel = (u) => (u.track ? `${u.lvl} · ${u.track.short}` : u.lvl);
   // O seu nível no QECR: o primeiro nível que ainda não está completo. Um nível só com parte das unidades
   // prontas ("partial") segura você nele; um nível sem unidades quer dizer que você já passou do anterior.
   PT.currentLevel = () => PT.LEVELS.find((L) => L.partial || !L.units.length || L.units.some((u) => u.lessons.some((l) => !isDone(l)))) || PT.LEVELS[PT.LEVELS.length - 1];
 
   PT.views.trilha = function (root) {
     const nl = PT.nextLesson(), saved = readOpen(), cur = PT.currentLevel();
+    const main = PT.mainLessons(), mainDone = main.filter(isDone).length;
     root.append(h("div", { class: "stack" },
       h("div", {}, h("h1", {}, "Trilha"),
-        h("p", { class: "muted" }, `Organizada pelos níveis do Quadro Europeu Comum de Referência, do A1 ao C2. ${PT.lessonsDone()} de ${PT.allLessons().length} lições completas. Você pode fazer em qualquer ordem.`)),
+        h("p", { class: "muted" }, `Organizada pelos níveis do Quadro Europeu Comum de Referência, do A1 ao C2. ${mainDone} de ${main.length} lições completas na trilha principal${PT.TRACKS.length ? ", e há caminhos opcionais em alguns níveis" : ""}. Você pode fazer em qualquer ordem.`)),
       PT.LEVELS.map((L) => levelSection(L, L.id in saved ? saved[L.id] : L === cur, nl, cur))));
   };
 
@@ -34,24 +42,68 @@
           h("span", { class: "lv-top" }, h("span", { class: "lv-name" }, `${L.id} · ${L.t}`),
             soon ? h("span", { class: "lv-soon" }, "Em breve") : h("span", { class: "lv-count" }, `${done}/${lessons.length}`)),
           h("span", { class: "lv-desc" }, L.d),
-          soon ? null : h("span", { class: "bar lv-bar", role: "img", "aria-label": `${done} de ${lessons.length} lições` }, h("i", { style: `width:${Math.round((done / lessons.length) * 100)}%` }))),
+          soon ? null : h("span", { class: "bar lv-bar", role: "img", "aria-label": `${done} de ${lessons.length} lições` }, h("i", { style: `width:${Math.round((done / lessons.length) * 100)}%` })),
+          (L.tracks || []).map((T) => { const tl = PT.trackLessons(T); return h("span", { class: "lv-extra" }, `${T.e} Caminho opcional ${T.short} · ${tl.filter(isDone).length}/${tl.length}`); })),
         h("span", { class: "chev", "aria-hidden": "true", html: ICON.chev })),
       h("div", { class: "lv-body" },
-        h("div", { class: "lv-can" }, h("div", { class: "label" }, soon ? `No ${L.id}, você vai aprender a:` : `No fim do ${L.id}, você consegue:`), h("ul", {}, L.can.map((c) => h("li", {}, c)))),
         !soon && before && before.units.length && cur === before ? h("p", { class: "small muted", style: "text-align:center" }, `Dica: termine o ${before.id} antes. Mas você pode fazer qualquer lição.`) : null,
-        L.units.map((u, i) => unitSection(u, i, nl)),
-        soon ? h("div", { class: "lv-note" }, `🚧 O nível ${L.id} ainda está em construção.`)
-          : L.partial ? h("div", { class: "lv-note" }, `🚧 Mais unidades do ${L.id} em breve.`) : null));
+        pathPicker(L, h("div", { class: "lv-path" },
+          h("div", { class: "lv-can" }, h("div", { class: "label" }, soon ? `No ${L.id}, você vai aprender a:` : `No fim do ${L.id}, você consegue:`), h("ul", {}, L.can.map((c) => h("li", {}, c)))),
+          L.units.map((u, i) => unitSection(u, i, nl)),
+          soon ? h("div", { class: "lv-note" }, `🚧 O nível ${L.id} ainda está em construção.`)
+            : L.partial ? h("div", { class: "lv-note" }, `🚧 Mais unidades do ${L.id} em breve.`) : null), done, lessons.length)));
     det.open = open;
     det.addEventListener("toggle", () => saveOpen(L.id, det.open));
     return det;
   }
 
+  // Um nível com caminhos opcionais ganha uma escolha no topo: a trilha principal ou um caminho opcional.
+  function pathPicker(L, mainBox, done, total) {
+    const tracks = L.tracks || [];
+    if (!tracks.length) return mainBox;
+    const boxes = [["main", mainBox], ...tracks.map((T) => [T.id, trackSection(T, L)])];
+    const want = readPath()[L.id];
+    let sel = boxes.some(([id]) => id === want) ? want : "main";
+    const btns = boxes.map(([id]) => {
+      const T = tracks.find((t) => t.id === id), tl = T ? PT.trackLessons(T) : null;
+      return h("button", { type: "button", "data-path": id, style: T ? `--tk:${T.c}` : "" },
+        h("span", { class: "pp-name" }, T ? `${T.e} ${T.short}` : "Trilha principal"),
+        h("span", { class: "pp-sub" }, T ? `opcional · ${tl.filter(isDone).length}/${tl.length}` : `${done}/${total} lições`));
+    });
+    const show = () => {
+      boxes.forEach(([id, box]) => (box.hidden = id !== sel));
+      btns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.path === sel)));
+    };
+    btns.forEach((b) => (b.onclick = () => { sel = b.dataset.path; savePath(L.id, sel); show(); }));
+    show();
+    return h("div", { class: "stack", style: "gap:22px" },
+      h("div", { class: "path-pick", role: "group", "aria-label": `Caminho do ${L.id}` }, btns),
+      boxes.map(([, box]) => box));
+  }
+
+  function trackSection(T, L) {
+    const ls = PT.trackLessons(T), done = ls.filter(isDone).length;
+    const tnl = ls.find((l) => !isDone(l)) || {};
+    return h("div", { class: "lv-path", style: `--lv:${T.c}` },
+      h("div", { class: "track-intro" },
+        h("div", { class: "row", style: "flex-wrap:nowrap;align-items:center" },
+          h("span", { class: "track-e", "aria-hidden": "true" }, T.e),
+          h("div", { style: "flex:1;min-width:0" }, h("div", { class: "label" }, `Caminho opcional · ${L.id}`), h("h2", {}, T.t)),
+          h("span", { class: "lv-count" }, `${done}/${ls.length}`)),
+        h("p", { class: "small" }, T.d),
+        h("p", { class: "small muted" }, `Não conta para completar o ${L.id} nem muda o nível da conversa com a IA. Faça como alternativa ou como reforço da trilha principal: as palavras vão para os seus cartões do mesmo jeito.`),
+        h("span", { class: "bar lv-bar", role: "img", "aria-label": `${done} de ${ls.length} lições` }, h("i", { style: `width:${Math.round((done / ls.length) * 100)}%` }))),
+      h("div", { class: "lv-can" }, h("div", { class: "label" }, "Com este caminho, você aprende a:"), h("ul", {}, T.can.map((c) => h("li", {}, c)))),
+      T.units.map((u, i) => unitSection(u, i, tnl)));
+  }
+
   function unitSection(u, i, nl) {
     const S = PT.S, done = u.lessons.filter(isDone).length;
+    const scenes = (u.scenes || []).map((id) => u.track.scenes.find((s) => s.id === id)).filter(Boolean);
     return h("section", { class: "unit", style: `--u:${u.c}` },
       h("div", { class: "unit-head" }, h("span", { class: "e", "aria-hidden": "true" }, u.e),
-        h("div", {}, h("div", { class: "label" }, `${u.lvl} · Unidade ${i + 1} · ${done}/${u.lessons.length}`), h("h2", {}, u.t))),
+        h("div", {}, h("div", { class: "label" }, u.track ? `${u.track.short} · Capítulo ${u.n} · ${done}/${u.lessons.length}` : `${u.lvl} · Unidade ${i + 1} · ${done}/${u.lessons.length}`), h("h2", {}, u.t),
+          u.d ? h("div", { class: "unit-d" }, u.d) : null)),
       h("div", { class: "path" }, u.lessons.map((l, j) => {
         const st = S.lessons[l.id] || {}, isNext = nl.id === l.id && !st.done;
         const off = [0, 56, 0, -56][(j + i) % 4];
@@ -60,7 +112,12 @@
           h("span", { class: "disc", "aria-hidden": "true" }, l.e),
           h("span", { class: "name" }, l.t),
           h("span", { class: "stars", "aria-label": st.done ? `${st.stars} estrelas` : "" }, st.done ? "★".repeat(st.stars) + "☆".repeat(3 - st.stars) : ""));
-      })));
+      })),
+      scenes.length ? h("div", { class: "unit-scenes" },
+        h("div", { class: "label" }, "🎭 Cenas para praticar com a IA"),
+        scenes.map((s) => h("button", { class: "scene", onclick: () => PT.startChat(s.id, "trilha") },
+          h("span", { class: "e", "aria-hidden": "true" }, s.e),
+          h("span", { class: "stack", style: "gap:4px" }, h("b", {}, s.t), h("span", { class: "small muted" }, `com ${s.who}`))))) : null);
   }
 
   function lessonSheet(l, u) {
@@ -68,7 +125,7 @@
     const close = PT.modal(h("div", { class: "stack", style: `--u:${u.c}` },
       h("div", { class: "row" },
         h("span", { style: "font-size:2.6rem;line-height:1" }, l.e),
-        h("div", { style: "flex:1" }, h("div", { class: "label" }, `${u.lvl} · ${u.t}`), h("h2", {}, l.t)),
+        h("div", { style: "flex:1" }, h("div", { class: "label" }, `${unitLabel(u)} · ${u.t}`), h("h2", {}, l.t)),
         h("button", { class: "icon-btn", "aria-label": "Fechar", html: ICON.close, onclick: () => close() })),
       st.done ? h("p", { class: "muted" }, `${"★".repeat(st.stars)}${"☆".repeat(3 - st.stars)} · feita ${st.done}× · praticar de novo vale XP.`) : h("p", { class: "muted" }, "Explicação, 8 palavras novas e cerca de 14 exercícios."),
       h("div", { class: "words" }, l.v.map((v) => h("span", { class: "wchip" }, h("span", {}, v[1]), v[0]))),
@@ -260,7 +317,7 @@
       next.onclick = words;
       onEnter = words;
       PT.put(body, 
-        h("div", {}, h("div", { class: "label" }, `${L.unit.lvl} · ${L.unit.t} · lição`), h("h1", {}, L.t)),
+        h("div", {}, h("div", { class: "label" }, `${unitLabel(L.unit)} · ${L.unit.t} · lição`), h("h1", {}, L.t)),
         h("div", { class: "panel explain" }, L.ex.map((p) => h("p", { html: md(p) }))),
         L.pt && S.settings.ptNotes ? h("div", { class: "pt-note", html: "🇵🇹 " + md(L.pt) }) : null,
         next,
@@ -356,7 +413,8 @@
       if (perfect) PT.award("perfeito");
       PT.confetti(perfect ? 180 : 110);
 
-      const all = PT.allLessons(), nl = all.find((l) => !(S.lessons[l.id] || {}).done);
+      // A próxima lição continua no mesmo caminho: na trilha principal ou no caminho opcional.
+      const pool = L.unit.track ? PT.trackLessons(L.unit.track) : PT.mainLessons(), nl = pool.find((l) => !(S.lessons[l.id] || {}).done);
       PT.put(body, h("div", { class: "results" },
         PT.wave(),
         h("div", { class: "label" }, practice ? "Prática completa" : "Lição completa"),

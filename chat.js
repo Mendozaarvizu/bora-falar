@@ -87,6 +87,14 @@ Formato exato:
   const transcript = (msgs, scene) => msgs.map((m) => `${m.role === "user" ? "ALUNO" : scene.who.toUpperCase()}: ${m.content}`).join("\n");
 
   /* ---------- lista de cenas ---------- */
+  const allScenes = () => PT.SCENES.concat(PT.TRACKS.flatMap((T) => T.scenes));
+  function sceneBtn(s) {
+    const saved = load(s.id), n = saved ? saved.msgs.filter((m) => m.role === "user").length : 0;
+    return h("button", { class: "scene", onclick: () => PT.startChat(s.id) },
+      h("span", { class: "e", "aria-hidden": "true" }, s.e),
+      h("span", { class: "stack", style: "gap:4px" }, h("b", {}, s.t), h("span", { class: "small muted" }, s.d),
+        n ? h("span", { class: "small", style: "color:var(--accent);font-weight:700" }, `Continuar conversa · ${n} ${n === 1 ? "mensagem" : "mensagens"} suas`) : null));
+  }
   PT.views.conversa = function (root) {
     const note = h("div", { class: "notice", hidden: true });
     const L = level(), next = PT.LEVELS[PT.LEVELS.indexOf(L) + 1];
@@ -96,13 +104,14 @@ Formato exato:
         h("span", { class: "lv-chip" }, `${L.id} · ${L.t}`),
         h("span", { class: "small muted" }, `A IA fala e corrige no seu nível da trilha.${next && !L.partial && L.units.length ? ` Quando você completar o ${L.id}, ela passa para o ${next.id}.` : ""}`)),
       note,
-      h("div", { class: "stack", style: "gap:10px" }, PT.SCENES.map((s) => {
-        const saved = load(s.id), n = saved ? saved.msgs.filter((m) => m.role === "user").length : 0;
-        return h("button", { class: "scene", onclick: () => PT.startChat(s.id) },
-          h("span", { class: "e", "aria-hidden": "true" }, s.e),
-          h("span", { class: "stack", style: "gap:4px" }, h("b", {}, s.t), h("span", { class: "small muted" }, s.d),
-            n ? h("span", { class: "small", style: "color:var(--accent);font-weight:700" }, `Continuar conversa · ${n} ${n === 1 ? "mensagem" : "mensagens"} suas`) : null));
-      })),
+      h("div", { class: "stack", style: "gap:10px" }, PT.SCENES.map(sceneBtn)),
+      // As cenas dos caminhos opcionais (ex.: as revisões do Berlitz 4) ficam num grupo à parte, fechado.
+      PT.TRACKS.filter((T) => T.scenes.length).map((T) => h("details", { class: "wgroup scene-group", style: `--lv:${T.c}` },
+        h("summary", {},
+          h("span", { style: "font-size:1.5rem", "aria-hidden": "true" }, T.e),
+          h("span", { class: "stack", style: "gap:2px;flex:1;min-width:0" }, h("b", {}, `Cenas do ${T.short}`), h("span", { class: "small muted" }, `As situações das revisões do livro ${T.t}. Você faz um papel e a IA faz o outro.`)),
+          h("span", { class: "chev", "aria-hidden": "true", html: ICON.chev })),
+        h("div", { class: "stack scene-list" }, T.scenes.map(sceneBtn)))),
       h("p", { class: "small muted" }, "Cada mensagem vale 5 XP. Ao terminar, peça uma avaliação e leve as palavras novas para os seus cartões.")));
     getSample().then((s) => {
       if (!s || aiOff) { note.textContent = "A conversa com IA precisa ser aberta no Claude. Aqui ela não está disponível, mas lições, cartões e escuta funcionam normalmente."; note.hidden = false; }
@@ -110,13 +119,14 @@ Formato exato:
   };
 
   /* ---------- tela de conversa ---------- */
-  PT.startChat = function (id) {
-    const scene = PT.SCENES.find((s) => s.id === id);
+  // "from" diz para onde o botão Voltar leva (a trilha, quando a cena foi aberta numa unidade de revisão).
+  PT.startChat = function (id, from) {
+    const scene = allScenes().find((s) => s.id === id);
     if (!scene) return;
-    PT.focus((root) => chat(root, scene));
+    PT.focus((root) => chat(root, scene, from || "conversa"));
   };
 
-  function chat(root, scene) {
+  function chat(root, scene, from) {
     let convo = load(scene.id) || { msgs: [{ role: "assistant", content: scene.open }], evaluated: false };
     let busy = false, ctl = null;
     const list = h("div", { class: "chat", "aria-live": "polite" });
@@ -129,10 +139,10 @@ Formato exato:
 
     root.append(h("div", { class: "stack" },
       h("div", { class: "row", style: "flex-wrap:nowrap" },
-        h("button", { class: "icon-btn", "aria-label": "Voltar", html: ICON.back, onclick: () => { if (ctl) ctl.abort(); PT.go("conversa"); } }),
+        h("button", { class: "icon-btn", "aria-label": "Voltar", html: ICON.back, onclick: () => { if (ctl) ctl.abort(); PT.go(from); } }),
         h("span", { style: "font-size:1.8rem" }, scene.e),
         h("div", { style: "flex:1;min-width:0" }, h("h2", {}, scene.t), h("div", { class: "small muted" }, `com ${scene.who} · nível ${level().id}`)),
-        h("button", { class: "link small", onclick: () => PT.confirm("Recomeçar a conversa?", "As mensagens desta conversa vão sumir.", "Recomeçar", () => { drop(scene.id); PT.startChat(scene.id); }) }, "Recomeçar")),
+        h("button", { class: "link small", onclick: () => PT.confirm("Recomeçar a conversa?", "As mensagens desta conversa vão sumir.", "Recomeçar", () => { drop(scene.id); PT.startChat(scene.id, from); }) }, "Recomeçar")),
       h("div", { class: "ctx" }, "🎬 ", scene.d),
       list,
       h("div", { class: "composer" }, status, sugs,
@@ -261,7 +271,7 @@ ${transcript(convo.msgs.slice(-30), scene)}`, { cache: false });
               h("div", {}, h("b", {}, String(x.w)), h("p", { class: "small muted" }, String(x.d)), x.x ? h("p", { class: "small", style: "font-style:italic" }, String(x.x)) : null))), add) : null,
           h("div", { class: "grid2" },
             h("button", { class: "btn ghost", onclick: () => close() }, "Continuar"),
-            h("button", { class: "btn ghost", onclick: () => { close(); drop(scene.id); PT.go("conversa"); } }, "Nova conversa")));
+            h("button", { class: "btn ghost", onclick: () => { close(); drop(scene.id); PT.go(from); } }, "Nova conversa")));
       } catch (e) {
         PT.put(box, h("h2", {}, "Avaliação"), h("p", {}, errCopy(e)), h("button", { class: "btn ghost", onclick: () => close() }, "Fechar"));
       }

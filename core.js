@@ -218,7 +218,11 @@
     while (active(d)) { n++; d--; }
     return n;
   };
-  PT.allLessons = () => PT.UNITS.flatMap((u) => u.lessons.map((l) => ({ ...l, unit: u })));
+  const withUnit = (units) => units.flatMap((u) => u.lessons.map((l) => ({ ...l, unit: u })));
+  // A trilha principal (que define o seu nível) e os caminhos opcionais de cada nível.
+  PT.mainLessons = () => withUnit(PT.UNITS);
+  PT.trackLessons = (T) => withUnit(T.units);
+  PT.allLessons = () => PT.mainLessons().concat((PT.TRACKS || []).flatMap(PT.trackLessons));
   PT.lessonsDone = () => Object.values(PT.S.lessons).filter((x) => x.done > 0).length;
 
   const pending = [];
@@ -247,8 +251,9 @@
   PT.checkBadges = function () {
     const levelDone = (id) => { const L = PT.LEVELS.find((x) => x.id === id); return !!L && L.units.length > 0 && !L.partial && L.units.every((u) => u.lessons.every((l) => (PT.S.lessons[l.id] || {}).done)); };
     const S = PT.S, n = PT.lessonsDone(), st = S.stats, sk = PT.streak(), lv = PT.levelOf(S.xp);
+    const allDone = (ls) => ls.length > 0 && ls.every((l) => (S.lessons[l.id] || {}).done);
     const rules = {
-      primeira: n >= 1, cinco: n >= 5, quinze: n >= 15, trilha: n >= PT.allLessons().length,
+      primeira: n >= 1, cinco: n >= 5, quinze: n >= 15, trilha: allDone(PT.mainLessons()),
       nivelA1: levelDone("A1"), nivelA2: levelDone("A2"),
       dias3: sk >= 3, dias7: sk >= 7, dias30: sk >= 30,
       cartoes50: st.reviews >= 50, cartoes500: st.reviews >= 500,
@@ -256,6 +261,7 @@
       papo1: st.msgs >= 1, papo50: st.msgs >= 50, avaliacao: st.evals >= 1, foneticista: (st.ipaOk || 0) >= 20,
       nivel5: lv >= 5, nivel10: lv >= 10
     };
+    for (const T of PT.TRACKS || []) if (T.badge) rules[T.badge] = allDone(PT.trackLessons(T));
     for (const [id, ok] of Object.entries(rules)) if (ok) PT.award(id);
   };
   PT.award = function (id) {
@@ -433,7 +439,7 @@
     return PT.S.settings.name ? `${g}, ${PT.S.settings.name}!` : `${g}!`;
   }
   PT.nextLesson = function () {
-    const all = PT.allLessons();
+    const all = PT.mainLessons();
     return all.find((l) => !(PT.S.lessons[l.id] || {}).done)
       || all.slice().sort((a, b) => (PT.S.lessons[a.id].stars || 0) - (PT.S.lessons[b.id].stars || 0))[0];
   };

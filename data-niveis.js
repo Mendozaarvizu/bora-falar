@@ -83,4 +83,12 @@ PT.LEVELS = [
   const last = PT.LEVELS.filter((L) => L.units.length).pop();
   for (const u of PT.UNITS) if (!used.has(u.id)) { u.lvl = last.id; last.units.push(u); }
   PT.UNITS = PT.LEVELS.flatMap((L) => L.units);
+  // Caminhos opcionais (PT.TRACKS) ficam dentro do seu nível, mas fora de PT.UNITS:
+  // não contam para completar o nível nem mudam o nível da conversa com a IA.
+  PT.TRACKS = PT.TRACKS || [];
+  for (const T of PT.TRACKS) {
+    const L = PT.LEVELS.find((x) => x.id === T.lvl) || last;
+    (L.tracks || (L.tracks = [])).push(T);
+    for (const u of T.units) { u.lvl = L.id; u.track = T; }
+  }
 })();

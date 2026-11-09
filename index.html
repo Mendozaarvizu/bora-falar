@@ -38,6 +38,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { background: var(--bg); }
 body { overflow-x: hidden; color: var(--ink); font-family: var(--body); font-weight: 500; font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 button, input, textarea, select { font: inherit; color: inherit; }
@@ -441,6 +442,7 @@ details[open] > summary .chev { transform: rotate(90deg); }
 .rec-meter { width: 100%; max-width: 260px; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 .rec-meter i { display: block; height: 100%; width: 0; background: var(--good); border-radius: 999px; transition: width .08s linear; }
 .rec-status { font-size: .9rem; color: var(--ink-2); text-align: center; min-height: 1.4em; }
+.rec-status.warn { color: var(--ink); background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
 .rec-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .say-ipa { font-family: var(--ipa); font-size: 1.3rem; color: var(--ink-2); margin-top: 6px; }
 

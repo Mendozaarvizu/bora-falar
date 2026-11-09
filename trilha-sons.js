@@ -153,7 +153,7 @@
               h("span", { class: "stars", "aria-label": st.done ? `${st.stars} estrelas` : "" }, st.done ? "★".repeat(st.stars) + "☆".repeat(3 - st.stars) : ""));
           })));
       }),
-      h("div", { class: "lv-note" }, "🚧 Próximas unidades: " + PT.SOUND_SOON.map(([e, t]) => `${e} ${t}`).join(" · ")));
+      PT.SOUND_SOON.length ? h("div", { class: "lv-note" }, "🚧 Próximas unidades: " + PT.SOUND_SOON.map(([e, t]) => `${e} ${t}`).join(" · ")) : null);
   };
 
   function sheet(l) {
@@ -186,7 +186,7 @@
       take(L.pairs, 3).forEach((p) => ear.push({ type: "which", p, target: Math.random() < 0.5 ? 0 : 1 }));
       take(L.pairs, 2).forEach((p) => { const a = Math.random() < 0.5 ? 0 : 1; ear.push({ type: "same", p, a, b: Math.random() < 0.5 ? a : 1 - a }); });
     }
-    take(L.cats, audio ? 4 : 7).forEach((c) => ear.push({ type: "sort", cat: c }));
+    take(L.cats, L.hide && !audio ? 0 : audio ? 4 : 7).forEach((c) => ear.push({ type: "sort", cat: c }));
     const used = new Set();
     ear.filter((x) => x.type === "sort").forEach((x) => { const free = x.cat.words.filter((w) => !used.has(w)); x.word = pick(free.length ? free : x.cat.words); used.add(x.word); });
     items.push(...shuffle(ear));
@@ -280,12 +280,14 @@
       sort(it, body, done, st) {
         const w = it.word;
         if (PT.tts.ok) PT.speakSoon(w);
+        const long = w.includes(" ");
         ask(body, done, st, {
-          prompt: "Que som tem a sílaba forte?", ear: true,
-          head: [h("div", { class: "row", style: "justify-content:center" }, h("div", { class: "word-hero" }, w), PT.tts.ok ? playBtn(() => say(w)) : null, PT.tts.ok ? playBtn(() => say(w, { slow: true }), { slow: true }) : null)],
+          prompt: L.q || "Que som tem a sílaba forte?", ear: true,
+          // L.hide: a resposta estaria na escrita (ex.: o ponto de interrogação), então só o áudio aparece
+          head: [L.hide ? listenRow(w) : h("div", { class: "row", style: "justify-content:center" }, h("div", { class: "word-hero", style: long ? "font-size:1.6rem" : null }, w), PT.tts.ok ? playBtn(() => say(w)) : null, PT.tts.ok ? playBtn(() => say(w, { slow: true }), { slow: true }) : null)],
           labels: L.cats.map((c) => h("span", {}, h("span", { class: "ipa", style: "font-weight:700" }, c.label), h("span", { class: "small muted" }, "  " + c.hint))),
           answer: L.cats.indexOf(it.cat),
-          after: () => h("p", {}, sayChip(w), " tem ", h("strong", { class: "ipa" }, it.cat.label), ", ", it.cat.hint, ".")
+          after: () => h("p", {}, sayChip(w), " → ", h("strong", { class: "ipa" }, it.cat.label), ` (${it.cat.hint})`)
         });
       },
       ipa(it, body, done, st) {
@@ -333,10 +335,13 @@
           PT.gain(xp);
           done({ ok: true, xp });
         };
+        const skip = h("button", { class: "link small", type: "button", style: "align-self:center", onclick: () => finish(false) }, "Continuar sem gravar");
+        // Sem microfone: o gravador some, fica o aviso do motivo e um botão para seguir depois de repetir em voz alta.
         const noMic = (msg) => {
           status.textContent = msg;
-          recBtn.hidden = meter.hidden = mineBtn.hidden = cmpBtn.hidden = true;
-          good.textContent = "Repeti em voz alta"; good.disabled = false; more.hidden = true;
+          status.classList.add("warn");
+          recBtn.hidden = meter.hidden = mineBtn.hidden = cmpBtn.hidden = more.hidden = skip.hidden = true;
+          good.textContent = "Repeti em voz alta"; good.disabled = false;
         };
         async function stopRec() {
           if (!rec || busy) return;
@@ -366,9 +371,9 @@
           } catch (e) {
             busy = false; rec = null;
             const n = e && e.name;
-            noMic(n === "NotAllowedError" || n === "SecurityError" ? "O microfone está bloqueado para esta página. Libere nas permissões do navegador, ou ouça o modelo e repita em voz alta."
-              : n === "NotFoundError" ? "Não encontrei um microfone. Ouça o modelo e repita em voz alta."
-              : "Não consegui gravar aqui. Ouça o modelo e repita em voz alta.");
+            noMic(n === "NotAllowedError" || n === "SecurityError" ? "🎙 O microfone está bloqueado para esta página, então não dá para gravar. Ouça o modelo e repita em voz alta."
+              : n === "NotFoundError" ? "🎙 Não encontrei um microfone neste aparelho. Ouça o modelo e repita em voz alta."
+              : `🎙 Não consegui gravar aqui${n ? ` (${n})` : ""}. Ouça o modelo e repita em voz alta.`);
           }
         };
         mineBtn.onclick = () => { if (mine && !rec) Rec.play(mine); };
@@ -386,8 +391,8 @@
           h("div", { class: "row", style: "justify-content:center;gap:16px" }, playBtn(() => { Rec.stopPlay(); return say(text); }, { lg: true }), playBtn(() => { Rec.stopPlay(); return say(text, { slow: true }); }, { slow: true })),
           h("div", { class: "rec" }, recBtn, meter, status, h("div", { class: "rec-row" }, mineBtn, cmpBtn)),
           h("p", { class: "small muted", style: "text-align:center" }, "Você é o juiz: ouça as duas vozes e decida. A gravação fica só neste aparelho e some quando você continua."),
-          h("div", { class: "feedback" }, h("div", { class: "row", style: "flex-wrap:nowrap" }, more, good)));
-        if (!Rec.can()) noMic("Não dá para gravar neste navegador. Ouça o modelo e repita em voz alta.");
+          h("div", { class: "feedback" }, h("div", { class: "row", style: "flex-wrap:nowrap" }, more, good), skip));
+        if (!Rec.can()) noMic("🎙 Não dá para gravar neste navegador. Ouça o modelo e repita em voz alta.");
         else status.textContent = "Ouça o modelo e toque em Gravar.";
       }
     };

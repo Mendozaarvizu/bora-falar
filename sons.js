@@ -2,7 +2,7 @@
 (function () {
   const PT = window.PT;
   const { h, md, esc, ICON, shuffle, pick } = PT;
-  let lastTab = "intro";
+  let lastTab = "trilha";
 
   /* ---------- peças pequenas ---------- */
   const hasPT = () => !!(PT.tts.ok && PT.tts.voicePT);
@@ -22,7 +22,7 @@
     h("span", { class: "stack", style: "gap:2px" },
       h("span", { class: "label" }, "Bônus"),
       h("b", { style: "font-size:1.05rem" }, "Laboratório de sons"),
-      h("small", {}, "Os sons do português com o AFI, como fazer cada um e as diferenças entre Brasil e Portugal.")));
+      h("small", {}, "Uma trilha de pronúncia para treinar o ouvido e gravar a sua voz, e o guia de todos os sons do Brasil e de Portugal.")));
 
   /* ---------- desenhos ---------- */
   function vowelChart() {
@@ -64,8 +64,9 @@
   }
 
   /* ---------- abas ---------- */
-  const TABS = [["intro", "O que é o AFI"], ["vogais", "Vogais"], ["nasais", "Nasais"], ["consoantes", "Consoantes"], ["brpt", "Brasil × Portugal"], ["desafio", "Desafio"]];
+  const TABS = [["trilha", "Trilha de sons"], ["intro", "O que é o AFI"], ["vogais", "Vogais"], ["nasais", "Nasais"], ["consoantes", "Consoantes"], ["brpt", "Brasil × Portugal"], ["desafio", "Desafio"]];
   const PANES = {};
+  PANES.trilha = () => PT.soundPath();
 
   PANES.intro = () => h("div", { class: "stack" },
     h("section", { class: "panel explain" },

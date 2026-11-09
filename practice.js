@@ -103,6 +103,7 @@
         o.render(items[st.i], body, (r) => { if (r.ok) st.ok++; st.xp += r.xp || 0; st.i++; next(); }, st, items);
       };
       const end = () => {
+        if (o.finish) o.finish(st, items);
         bar.firstChild.style.width = "100%";
         counter.textContent = "";
         if (st.xp) PT.confetti(80);

@@ -28,7 +28,8 @@
     root.append(h("div", { class: "stack" },
       h("div", {}, h("h1", {}, "Trilha"),
         h("p", { class: "muted" }, `Organizada pelos níveis do Quadro Europeu Comum de Referência, do A1 ao C2. ${mainDone} de ${main.length} lições completas na trilha principal${PT.TRACKS.length ? ", e há caminhos opcionais em alguns níveis" : ""}. Você pode fazer em qualquer ordem.`)),
-      PT.LEVELS.map((L) => levelSection(L, L.id in saved ? saved[L.id] : L === cur, nl, cur))));
+      PT.LEVELS.map((L) => levelSection(L, L.id in saved ? saved[L.id] : L === cur, nl, cur)),
+      PT.soundCard ? PT.soundCard() : null));
   };
 
   function levelSection(L, open, nl, cur) {

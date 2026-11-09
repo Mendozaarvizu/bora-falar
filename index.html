@@ -431,6 +431,19 @@ details[open] > summary .chev { transform: rotate(90deg); }
 .nasal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
 .opt.ipa { font-family: var(--ipa); font-size: 1.2rem; }
 
+/* ---------- trilha de sons: gravador ---------- */
+.rec { display: flex; flex-direction: column; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+.rec-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 24px; border-radius: 999px; border: 0; background: var(--bad); color: var(--surface); font-weight: 800; font-size: 1.05rem; box-shadow: 0 4px 0 color-mix(in srgb, var(--bad) 62%, #000); }
+.rec-btn svg { width: 22px; height: 22px; }
+.rec-btn:active { transform: translateY(2px); }
+.rec-btn.on { animation: pulse 1s ease-in-out infinite; }
+.rec-btn:disabled { opacity: .55; }
+.rec-meter { width: 100%; max-width: 260px; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.rec-meter i { display: block; height: 100%; width: 0; background: var(--good); border-radius: 999px; transition: width .08s linear; }
+.rec-status { font-size: .9rem; color: var(--ink-2); text-align: center; min-height: 1.4em; }
+.rec-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.say-ipa { font-family: var(--ipa); font-size: 1.3rem; color: var(--ink-2); margin-top: 6px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -484,5 +497,7 @@ details[open] > summary .chev { transform: rotate(90deg); }
 <script charset="utf-8" src="practice.js"></script>
 <script charset="utf-8" src="data-sons.js"></script>
 <script charset="utf-8" src="sons.js"></script>
+<script charset="utf-8" src="data-trilha-sons.js"></script>
+<script charset="utf-8" src="trilha-sons.js"></script>
 <script charset="utf-8" src="music.js"></script>
 <script charset="utf-8" src="chat.js"></script>

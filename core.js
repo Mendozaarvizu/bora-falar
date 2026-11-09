@@ -245,10 +245,11 @@
     if (!document.body.classList.contains("focus")) PT.flushPending();
   };
   PT.checkBadges = function () {
+    const levelDone = (id) => { const L = PT.LEVELS.find((x) => x.id === id); return !!L && L.units.length > 0 && !L.partial && L.units.every((u) => u.lessons.every((l) => (PT.S.lessons[l.id] || {}).done)); };
     const S = PT.S, n = PT.lessonsDone(), st = S.stats, sk = PT.streak(), lv = PT.levelOf(S.xp);
     const rules = {
       primeira: n >= 1, cinco: n >= 5, quinze: n >= 15, trilha: n >= PT.allLessons().length,
-      nivelA1: PT.LEVELS[0].units.every((u) => u.lessons.every((l) => (S.lessons[l.id] || {}).done)),
+      nivelA1: levelDone("A1"), nivelA2: levelDone("A2"),
       dias3: sk >= 3, dias7: sk >= 7, dias30: sk >= 30,
       cartoes50: st.reviews >= 50, cartoes500: st.reviews >= 500,
       ouvido: st.listenOk >= 25, ditado: st.dictOk >= 20,

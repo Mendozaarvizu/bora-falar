@@ -18,16 +18,17 @@ PT.LEVELS = [
     u: ["u11", "u1", "u2", "u12", "u6", "u3", "u13", "u14", "u7", "u4", "u5"]
   },
   {
-    id: "A2", t: "Básico", c: "#0E7490", partial: true,
-    d: "Falar do passado, contar histórias e dar a sua opinião.",
+    id: "A2", t: "Básico", c: "#0E7490",
+    d: "Contar o passado, resolver a vida no dia a dia e dar a sua opinião.",
     can: [
-      "Descrever o seu passado e contar histórias simples.",
-      "Falar com mais detalhes do trabalho, dos estudos e do lugar onde você mora.",
-      "Resolver situações do dia a dia: banco, médico, viagens, reclamações simples.",
-      "Comparar coisas, dar opinião, conselhos e pedir desculpas.",
-      "Entender o principal de mensagens, avisos e conversas simples."
+      "Contar a história da sua vida e o que aconteceu, com os dois passados.",
+      "Falar do seu trabalho, dos estudos, da sua casa e do seu bairro.",
+      "Resolver o dia a dia: banco, compras, trocas, médico, hotel e viagens.",
+      "Fazer e atender ligações, deixar recado e escrever e-mails simples.",
+      "Entender avisos, placas, receitas e mensagens curtas.",
+      "Comparar coisas, dar opinião e conselhos, e pedir desculpas."
     ],
-    u: ["u8", "u9", "u10"]
+    u: ["u15", "u8", "u16", "u17", "u9", "u10", "u18", "u19", "u20", "u21"]
   },
   {
     id: "B1", t: "Intermediário", c: "#1D4ED8",

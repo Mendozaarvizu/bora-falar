@@ -53,13 +53,18 @@
       fix: "Corrija tudo o que um nativo estranharia, mesmo os detalhes mínimos de estilo."
     }
   };
-  const level = () => PT.currentLevel();
-  const style = () => STYLE[level().id] || STYLE.A2;
-  // Para "Mais simples": um nível abaixo do seu, nunca abaixo do A1.
-  const easier = () => { const i = PT.LEVELS.indexOf(level()); return PT.LEVELS[Math.max(0, i - 1)].id; };
+  // Uma cena de um caminho opcional (ex.: Berlitz 4, do A2) nunca fica abaixo do nível desse caminho.
+  const level = (scene) => {
+    const cur = PT.currentLevel(), T = scene && PT.TRACKS.find((t) => t.scenes.includes(scene));
+    const tl = T && PT.LEVELS.find((x) => x.id === T.lvl);
+    return tl && PT.LEVELS.indexOf(tl) > PT.LEVELS.indexOf(cur) ? tl : cur;
+  };
+  const style = (L) => STYLE[L.id] || STYLE.A2;
+  // Para "Mais simples": um nível abaixo, nunca abaixo do A1.
+  const easier = (L) => PT.LEVELS[Math.max(0, PT.LEVELS.indexOf(L) - 1)].id;
 
   function rules(scene) {
-    const name = PT.S.settings.name, L = level(), st = style();
+    const name = PT.S.settings.name, L = level(scene), st = style(L);
     return `Você é um parceiro de conversa para um aluno de português do Brasil de nível ${L.id} (${L.t}) do Quadro Europeu Comum de Referência (QECR). O aluno fala espanhol.${name ? ` O nome do aluno é ${name}.` : ""} Você não sabe o gênero do aluno: evite formas marcadas por gênero até ele indicar.
 
 PERSONAGEM E CENA: ${scene.role}
@@ -128,7 +133,7 @@ Formato exato:
 
   function chat(root, scene, from) {
     let convo = load(scene.id) || { msgs: [{ role: "assistant", content: scene.open }], evaluated: false };
-    let busy = false, ctl = null;
+    let busy = false, ctl = null, gone = false;
     const list = h("div", { class: "chat", "aria-live": "polite" });
     const sugs = h("div", { class: "sugs" });
     const ta = h("textarea", { id: "chat-in", rows: "1", placeholder: "Escreva em português…", "aria-label": "Sua mensagem" });
@@ -141,14 +146,14 @@ Formato exato:
       h("div", { class: "row", style: "flex-wrap:nowrap" },
         h("button", { class: "icon-btn", "aria-label": "Voltar", html: ICON.back, onclick: () => { if (ctl) ctl.abort(); PT.go(from); } }),
         h("span", { style: "font-size:1.8rem" }, scene.e),
-        h("div", { style: "flex:1;min-width:0" }, h("h2", {}, scene.t), h("div", { class: "small muted" }, `com ${scene.who} · nível ${level().id}`)),
+        h("div", { style: "flex:1;min-width:0" }, h("h2", {}, scene.t), h("div", { class: "small muted" }, `com ${scene.who} · nível ${level(scene).id}`)),
         h("button", { class: "link small", onclick: () => PT.confirm("Recomeçar a conversa?", "As mensagens desta conversa vão sumir.", "Recomeçar", () => { drop(scene.id); PT.startChat(scene.id, from); }) }, "Recomeçar")),
       h("div", { class: "ctx" }, "🎬 ", scene.d),
       list,
       h("div", { class: "composer" }, status, sugs,
         h("div", { class: "row" }, ta, send),
         h("div", { class: "row", style: "gap:8px" }, helpBtn, endBtn))));
-    PT.cleanup = () => { if (ctl) ctl.abort(); };
+    PT.cleanup = () => { gone = true; if (ctl) ctl.abort(); };
 
     const save = () => store(scene.id, convo);
     const scrollEnd = () => requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }));
@@ -193,6 +198,7 @@ Formato exato:
         }
       } finally {
         busy = false; ctl = null; send.textContent = "Enviar";
+        if (gone) return; // a pessoa já saiu da conversa: não mexe na tela nova
         draw(); scrollEnd();
         const last = convo.msgs[convo.msgs.length - 1];
         if (last.role === "user" && !aiOff) {
@@ -217,7 +223,7 @@ Formato exato:
       if (!sample) return;
       btn.disabled = true; btn.textContent = "Pensando…";
       try {
-        const target = easier();
+        const target = easier(level(scene));
         const how = target === "A1" ? "bem simples (nível A1), com palavras muito comuns e frases de até 6 palavras" : `mais simples (nível ${target}), com palavras mais comuns e frases mais curtas`;
         const { text } = await sample(`Reescreva esta fala em português do Brasil ${how}. Não traduza para outra língua. Responda só com a fala reescrita.\n\nFala: "${m.content}"`, { modelTier: "quick" });
         m.simple = text.trim(); save(); draw();
@@ -229,7 +235,7 @@ Formato exato:
       helpBtn.disabled = true;
       PT.put(sugs, h("span", { class: "small muted" }, "Pensando em ideias…"));
       try {
-        const arr = await sample.json(`Cena: ${scene.role}\n\nConversa até agora:\n${transcript(convo.msgs.slice(-8), scene)}\n\nSugira 3 respostas curtas (máximo 12 palavras cada) que o ALUNO poderia mandar agora, em português do Brasil natural, que um aluno de nível ${level().id} do QECR consiga escrever. Responda só com um array JSON de 3 strings.`, { modelTier: "quick", cache: false });
+        const arr = await sample.json(`Cena: ${scene.role}\n\nConversa até agora:\n${transcript(convo.msgs.slice(-8), scene)}\n\nSugira 3 respostas curtas (máximo 12 palavras cada) que o ALUNO poderia mandar agora, em português do Brasil natural, que um aluno de nível ${level(scene).id} do QECR consiga escrever. Responda só com um array JSON de 3 strings.`, { modelTier: "quick", cache: false });
         const list3 = (Array.isArray(arr) ? arr : []).map(String).filter(Boolean).slice(0, 3);
         PT.put(sugs, ...list3.map((s) => h("button", { type: "button", onclick: () => { ta.value = s; ta.focus(); } }, s)));
       } catch (e) { PT.put(sugs); say(null, errCopy(e)); }
@@ -243,10 +249,10 @@ Formato exato:
       const box = h("div", { class: "stack" }, h("h2", {}, "Avaliação"), h("p", { class: "muted" }, h("span", { class: "thinking" }, h("i"), h("i"), h("i")), " A professora está lendo a conversa… (pode levar até um minuto)"));
       const close = PT.modal(box);
       try {
-        const r = await sample.json(`Você é professor de português do Brasil. Avalie as mensagens do ALUNO nesta conversa. O aluno está no nível ${level().id} do QECR e fala espanhol: compare com o que se espera de um aluno ${level().id} e escreva tudo em português ${level().id === "A1" ? "muito simples" : "simples"}, sem traduções.
+        const r = await sample.json(`Você é professor de português do Brasil. Avalie as mensagens do ALUNO nesta conversa. O aluno está no nível ${level(scene).id} do QECR e fala espanhol: compare com o que se espera de um aluno ${level(scene).id} e escreva tudo em português ${level(scene).id === "A1" ? "muito simples" : "simples"}, sem traduções.
 Responda só com JSON neste formato:
 {"resumo": "2 frases de avaliação geral, com carinho", "bom": ["até 3 pontos fortes"], "melhorar": ["até 3 pontos para melhorar, cada um com o exemplo certo"], "palavras": [{"w": "palavra ou expressão útil", "e": "um emoji", "d": "definição simples em português", "x": "frase curta de exemplo"}]}
-Em "palavras", inclua de 3 a 5 palavras ou expressões úteis para esta cena, adequadas ao nível ${level().id}, que o aluno ainda não usa bem.
+Em "palavras", inclua de 3 a 5 palavras ou expressões úteis para esta cena, adequadas ao nível ${level(scene).id}, que o aluno ainda não usa bem.
 
 Conversa:
 ${transcript(convo.msgs.slice(-30), scene)}`, { cache: false });

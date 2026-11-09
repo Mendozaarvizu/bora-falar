@@ -57,7 +57,31 @@
   const keyOf = (n) => new Date(n * 864e5).toISOString().slice(0, 10);
   const todayNum = () => dayNum(dayKey());
 
-  Object.assign(PT, { $, h, esc, md, ICON, shuffle, pick, stripAcc, norm, isAbbrev, dayKey, dayNum, keyOf, todayNum });
+  // Ditado: "exact" (igual), "accent" (só acentos ou hifens diferentes), "typo" (uma letra errada numa palavra) ou "wrong".
+  const loose = (s) => stripAcc(norm(s)).replace(/[-'’]/g, " ").replace(/\s+/g, " ").trim();
+  function oneOff(a, b) {
+    const la = a.length, lb = b.length;
+    if (Math.abs(la - lb) > 1) return false;
+    let i = 0;
+    while (i < la && i < lb && a[i] === b[i]) i++;
+    if (la === lb) return a.slice(i + 1) === b.slice(i + 1) || (a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2));
+    const [s, l] = la < lb ? [a, b] : [b, a];
+    return s.slice(i) === l.slice(i + 1);
+  }
+  function dictCheck(typed, text) {
+    if (norm(typed) === norm(text)) return "exact";
+    const x = loose(typed), y = loose(text);
+    if (x === y) return "accent";
+    const xw = x.split(" "), yw = y.split(" ");
+    if (xw.length !== yw.length) return "wrong";
+    const diff = yw.map((w, i) => i).filter((i) => xw[i] !== yw[i]);
+    return diff.length === 1 && yw[diff[0]].length >= 4 && oneOff(xw[diff[0]], yw[diff[0]]) ? "typo" : "wrong";
+  }
+  // Atalhos de teclado das lições e dos treinos: não valem com um aviso aberto, e o Enter num botão
+  // secundário (fechar, voltar, pular) aperta esse botão em vez de avançar.
+  const keysOff = (e) => !!document.querySelector(".modal-back") || (e.key === "Enter" && !!(e.target.closest && e.target.closest(".icon-btn, .link, .btn.ghost")));
+
+  Object.assign(PT, { $, h, esc, md, ICON, shuffle, pick, stripAcc, norm, isAbbrev, dayKey, dayNum, keyOf, todayNum, dictCheck, keysOff });
 
   /* ---------- estado ---------- */
   const KEY = "borafalar.v1";
@@ -66,7 +90,7 @@
       v: 1, xp: 0, days: {}, lessons: {}, cards: {}, custom: {}, badges: {},
       stats: { answers: 0, correct: 0, reviews: 0, listenOk: 0, dictOk: 0, msgs: 0, evals: 0, bestCombo: 0, ipaOk: 0 },
       settings: { goal: 150, rate: 1, voice: "", ptNotes: true, name: "", night: false, music: { on: false, track: "bossa", vol: 0.4 } },
-      lastActive: null, updatedAt: 0
+      lastActive: null, updatedAt: 0, resetAt: 0
     };
   }
   function hydrate(o) {
@@ -77,9 +101,14 @@
   function readLocal() { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { return null; } }
   function writeLocal() { try { localStorage.setItem(KEY, JSON.stringify(PT.S)); } catch (e) { /* sem armazenamento local */ } }
   PT.S = hydrate(readLocal());
+  // Troca o estado sem trocar o objeto: quem guardou uma referência (uma lição aberta, os Ajustes) continua valendo.
+  function setState(o) { for (const k of Object.keys(PT.S)) delete PT.S[k]; Object.assign(PT.S, o); }
 
   // Junta o progresso de dois aparelhos sem perder nada
   function merge(a, b) {
+    // Depois de "Apagar todo o progresso", o lado que ainda não sabe disso é descartado (senão o progresso voltaria).
+    const ra = a.resetAt || 0, rb = b.resetAt || 0;
+    if (ra !== rb) { const kept = hydrate(JSON.parse(JSON.stringify(ra > rb ? a : b))); kept.updatedAt = Date.now(); return kept; }
     const newer = (a.updatedAt || 0) >= (b.updatedAt || 0) ? a : b;
     const out = hydrate(JSON.parse(JSON.stringify(newer)));
     out.xp = Math.max(a.xp || 0, b.xp || 0);
@@ -137,21 +166,35 @@
       const uid = await user.id();
       if (!uid) return;
       sync.ref = db.doc("data/users/" + uid + "/progress");
-      const snap = await sync.ref.get();
-      if (snap.exists) {
-        PT.S = merge(PT.S, JSON.parse(JSON.stringify(snap.data())));
-        writeLocal();
-        PT.applyTheme();
-        if (PT.music) PT.music.refresh();
-        PT.loadVoices();
-        if (!document.body.classList.contains("focus")) PT.go(PT.tab || "inicio");
-        PT.updateHeader();
-      }
+      await pull();
       sync.cloud = true;
       flush();
     } catch (e) { sync.cloud = false; }
   }
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { clearTimeout(sync.timer); flush(); } });
+  // Busca o que está na conta e junta com o que está aqui. Roda ao abrir e cada vez que a aba volta para a frente,
+  // para uma aba aberta há dias não mostrar (nem salvar) um progresso velho.
+  const stamp = (s) => JSON.stringify({ ...s, updatedAt: 0 }, (k, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((x) => [x, v[x]])) : v));
+  let lastPull = 0;
+  async function pull() {
+    if (!sync.ref) return;
+    lastPull = Date.now();
+    const snap = await sync.ref.get();
+    if (!snap.exists) return;
+    const before = stamp(PT.S);
+    setState(merge(PT.S, JSON.parse(JSON.stringify(snap.data()))));
+    if (stamp(PT.S) === before) return;
+    writeLocal();
+    PT.applyTheme();
+    if (PT.music) PT.music.refresh();
+    PT.loadVoices();
+    if (!document.body.classList.contains("focus") && !document.querySelector(".modal-back")) PT.go(PT.tab || "inicio");
+    PT.updateHeader();
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") { clearTimeout(sync.timer); flush(); return; }
+    PT.updateHeader();
+    if (sync.ref && Date.now() - lastPull > 20000) pull().then(flush, () => { /* tenta de novo na próxima vez */ });
+  });
 
   // Dia por padrão; noite só quando a pessoa escolhe no Ajustes
   PT.applyTheme = () => document.documentElement.setAttribute("data-mode", PT.S.settings.night ? "night" : "day");
@@ -172,7 +215,13 @@
     // voz de Portugal, só para comparar no Laboratório de sons
     tts.voicePT = tts.voices.find((v) => /pt[-_]PT/i.test(v.lang)) || null;
   };
+  // Fala com um pequeno atraso (ao abrir um exercício). Só existe uma fala marcada por vez,
+  // e sair da tela (PT.hush) cancela a fala marcada e a que está tocando.
+  let soon = 0;
+  PT.speakSoon = function (text, ms = 250) { clearTimeout(soon); soon = setTimeout(() => PT.speak(text), ms); };
+  PT.hush = function () { clearTimeout(soon); if (tts.ok) { try { speechSynthesis.cancel(); } catch (e) { /* nada */ } } };
   PT.speak = function (text, opts = {}) {
+    clearTimeout(soon);
     return new Promise((resolve) => {
       if (!tts.ok) return resolve(false);
       const btn = opts.btn;
@@ -360,6 +409,7 @@
   PT.views = {};
   PT.go = function (tab, arg) {
     if (PT.cleanup) { try { PT.cleanup(); } catch (e) { /* nada */ } PT.cleanup = null; }
+    PT.hush();
     document.body.classList.remove("focus");
     if (!PT.views[tab]) tab = "inicio";
     PT.tab = tab;
@@ -375,6 +425,7 @@
   };
   PT.focus = function (render) {
     if (PT.cleanup) { try { PT.cleanup(); } catch (e) { /* nada */ } PT.cleanup = null; }
+    PT.hush();
     document.body.classList.add("focus");
     const v = $("#view");
     PT.put(v);
@@ -409,7 +460,7 @@
         h("b", {}, "Tem certeza? Isso apaga XP, cartões e conquistas."),
         h("div", { class: "grid2" },
           h("button", { class: "btn ghost sm", onclick: () => PT.put(resetBox, resetBtn) }, "Cancelar"),
-          h("button", { class: "btn bad sm", onclick: () => { const keep = PT.S.settings; PT.S = fresh(); PT.S.settings = keep; PT.save(true); close(); PT.go("inicio"); PT.toast("🧹", "Progresso apagado."); } }, "Apagar tudo"))));
+          h("button", { class: "btn bad sm", onclick: () => { const keep = PT.S.settings; setState({ ...fresh(), settings: keep, resetAt: Date.now() }); PT.save(true); close(); PT.go("inicio"); PT.toast("🧹", "Progresso apagado."); } }, "Apagar tudo"))));
     };
     resetBox.append(resetBtn);
     const close = PT.modal(h("div", { class: "stack" },

@@ -269,7 +269,7 @@
         st.onNum = (n) => choose(n - 1);
         if (q.type === "read") body.append(h("div", { class: "prompt" }, "Que palavra é esta?"), h("div", { class: "sym-big", style: "font-size:2.6rem;text-align:center;padding:18px 0" }, `[${q.br}]`), h("div", { class: "grid2" }, opts));
         if (q.type === "hear") {
-          setTimeout(() => PT.speak(q.w), 250);
+          PT.speakSoon(q.w);
           body.append(h("div", { class: "prompt" }, "Qual é a transcrição?"),
             h("div", { class: "row", style: "justify-content:center;gap:16px" }, PT.speakBtn(q.w, { lg: true }), PT.speakBtn(q.w, { slow: true })),
             h("div", { class: "opts" }, opts));

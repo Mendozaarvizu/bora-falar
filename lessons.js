@@ -129,7 +129,8 @@
         h("button", { class: "icon-btn", "aria-label": "Fechar", html: ICON.close, onclick: () => close() })),
       st.done ? h("p", { class: "muted" }, `${"★".repeat(st.stars)}${"☆".repeat(3 - st.stars)} · feita ${st.done}× · praticar de novo vale XP.`) : h("p", { class: "muted" }, "Explicação, 8 palavras novas e cerca de 14 exercícios."),
       h("div", { class: "words" }, l.v.map((v) => h("span", { class: "wchip" }, h("span", {}, v[1]), v[0]))),
-      h("button", { class: "btn block", onclick: () => { close(); PT.startLesson(l.id); } }, st.done ? "Praticar de novo" : "Começar")
+      h("button", { class: "btn block", onclick: () => { close(); PT.startLesson(l.id); } }, st.done ? "Praticar de novo" : "Começar"),
+      st.done ? h("button", { class: "btn ghost block", onclick: () => { close(); PT.startLesson(l.id, { explain: true }); } }, "📖 Rever a explicação") : null
     ));
   }
 
@@ -167,7 +168,7 @@
     "pick-def"(it, api) {
       const opts = shuffle([it.v, ...others(it.V, it.v)]);
       const ol = optionList(opts.map((o) => o.d), api);
-      setTimeout(() => PT.speak(it.v.w), 250);
+      PT.speakSoon(it.v.w);
       return {
         el: h("div", { class: "stack" }, h("div", { class: "prompt" }, "O que quer dizer?"),
           h("div", { class: "row", style: "justify-content:center" }, h("div", { class: "word-hero" }, it.v.w), PT.speakBtn(it.v.w)), ol.el),
@@ -178,7 +179,7 @@
     listen(it, api) {
       const opts = shuffle([it.v, ...others(it.V, it.v)]);
       const ol = optionList(opts.map((o) => o.w), api);
-      setTimeout(() => PT.speak(it.v.w), 250);
+      PT.speakSoon(it.v.w);
       return {
         el: h("div", { class: "stack" }, h("div", { class: "prompt" }, "O que você ouviu?"),
           h("div", { class: "row", style: "justify-content:center;gap:16px" }, PT.speakBtn(it.v.w, { lg: true }), PT.speakBtn(it.v.w, { slow: true })), ol.el),
@@ -213,7 +214,7 @@
         api.setReady(answer.length > 0);
       };
       draw();
-      setTimeout(() => PT.speak(s.s), 250);
+      PT.speakSoon(s.s);
       return {
         el: h("div", { class: "stack" }, h("div", { class: "prompt" }, "Monte a frase"),
           h("div", { class: "row", style: "flex-wrap:nowrap;align-items:flex-start" }, PT.tts.ok ? PT.speakBtn(s.s) : null, h("div", { class: "ctx" }, "💭 ", s.ctx)),
@@ -224,16 +225,17 @@
     dictate(it, api) {
       const input = h("input", { class: "type-in", id: "dictate-in", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false", placeholder: "Escreva aqui…" });
       input.oninput = () => api.setReady(input.value.trim().length > 0);
-      setTimeout(() => { PT.speak(it.text); input.focus({ preventScroll: true }); }, 250);
+      PT.speakSoon(it.text);
+      setTimeout(() => input.focus({ preventScroll: true }), 250);
       return {
         el: h("div", { class: "stack" }, h("div", { class: "prompt" }, "Escreva o que você ouviu"),
           h("div", { class: "row", style: "justify-content:center;gap:16px" }, PT.speakBtn(it.text, { lg: true }), PT.speakBtn(it.text, { slow: true })), input),
         check() {
           input.disabled = true;
-          const a = norm(input.value), b = norm(it.text);
-          if (a === b) return { ok: true, correct: it.text, say: it.text };
-          if (stripAcc(a) === stripAcc(b)) return { ok: true, correct: it.text, say: it.text, note: "Quase perfeito! Cuidado com os acentos." };
-          return { ok: false, correct: it.text, say: it.text };
+          const r = PT.dictCheck(input.value, it.text);
+          const note = r === "accent" ? "Quase perfeito! Confira os acentos e os hifens: " + it.text
+            : r === "typo" ? "Quase! Tem uma letra errada. O certo é: " + it.text : null;
+          return { ok: r !== "wrong", correct: it.text, say: it.text, note };
         }
       };
     },
@@ -282,12 +284,13 @@
   }
 
   /* ---------- lição ---------- */
-  PT.startLesson = function (id) {
+  // o.explain: mostra a explicação e as palavras de novo, mesmo numa lição já feita.
+  PT.startLesson = function (id, o) {
     const L = PT.allLessons().find((l) => l.id === id);
-    if (L) PT.focus((root) => runLesson(root, L));
+    if (L) PT.focus((root) => runLesson(root, L, o || {}));
   };
 
-  function runLesson(root, L) {
+  function runLesson(root, L, o) {
     const S = PT.S, prev = S.lessons[L.id] || {}, practice = !!prev.done;
     const st = { queue: buildExercises(L), idx: 0, total: 0, first: 0, errors: 0, combo: 0, best: 0, xp: 0, retried: new Set() };
     const bar = h("div", { class: "bar" }, h("i"));
@@ -303,6 +306,7 @@
       else PT.go("trilha");
     };
     const onKey = (e) => {
+      if (PT.keysOff(e)) return;
       const typing = e.target.matches && e.target.matches("input, textarea");
       if (e.key === "Enter" && onEnter) { e.preventDefault(); onEnter(); }
       else if (!typing && /^[1-4]$/.test(e.key) && onNum) onNum(Number(e.key));
@@ -404,7 +408,8 @@
       const acc = st.total ? st.first / st.total : 1;
       const stars = acc >= 0.95 ? 3 : acc >= 0.8 ? 2 : 1;
       const perfect = st.errors === 0;
-      S.lessons[L.id] = { stars: Math.max(prev.stars || 0, stars), done: (prev.done || 0) + 1 };
+      const was = S.lessons[L.id] || prev;
+      S.lessons[L.id] = { stars: Math.max(was.stars || 0, stars), done: (was.done || 0) + 1 };
       S.stats.bestCombo = Math.max(S.stats.bestCombo, st.best);
       const added = PT.srs.addLesson(L);
       const bonus = (practice ? 8 : 15) + (perfect ? 10 : 0);
@@ -431,6 +436,6 @@
           h("button", { class: "btn ghost block", onclick: () => PT.go("trilha") }, "Voltar à trilha"))));
     }
 
-    practice ? startEx() : explain();
+    practice && !o.explain ? startEx() : explain();
   }
 })();

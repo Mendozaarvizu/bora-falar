@@ -86,6 +86,7 @@
         h("div", { class: "lesson-top" }, h("button", { class: "icon-btn", "aria-label": "Sair", html: ICON.close, onclick: () => PT.go(o.back, o.backArg) }), bar, counter),
         h("div", { class: "label" }, o.title), body));
       const onKey = (e) => {
+        if (PT.keysOff(e)) return;
         const typing = e.target.matches && e.target.matches("input, textarea");
         if (e.key === "Enter" && st.onEnter) { e.preventDefault(); st.onEnter(); }
         else if (e.key === " " && !typing && st.onSpace) { e.preventDefault(); st.onSpace(); }
@@ -144,7 +145,7 @@
           PT.put(card, ...(dir === "r"
             ? [h("div", { class: "label" }, "O que quer dizer?"), h("div", { class: "row", style: "justify-content:center" }, h("div", { class: "word-hero" }, v.w), PT.speakBtn(v.w))]
             : [h("div", { class: "label" }, "Qual é a palavra?"), h("div", { class: "big-emoji" }, v.e), h("p", { style: "font-size:1.1rem;max-width:34ch" }, v.d)]));
-          if (dir === "r" && !PT.isAbbrev(v.w)) setTimeout(() => PT.speak(v.w), 200);
+          if (dir === "r" && !PT.isAbbrev(v.w)) PT.speakSoon(v.w, 200);
         };
         const reveal = h("button", { class: "btn block" }, "Mostrar resposta");
         const foot = h("div", { class: "feedback" }, reveal);
@@ -260,7 +261,7 @@
         };
         opts.forEach((o, i) => (o.onclick = () => choose(i)));
         st.onNum = (n) => n <= 2 && choose(n - 1);
-        setTimeout(() => PT.speak(word), 250);
+        PT.speakSoon(word);
         body.append(h("div", { class: "prompt" }, "Qual você ouviu?"),
           h("div", { class: "row", style: "justify-content:center;gap:16px" }, PT.speakBtn(word, { lg: true }), PT.speakBtn(word, { slow: true })),
           h("div", { class: "grid2" }, opts));
@@ -280,21 +281,22 @@
         const doCheck = () => {
           if (check.disabled) return;
           input.disabled = true;
-          const a = norm(input.value), b = norm(text);
-          const exact = a === b, close = !exact && stripAcc(a) === stripAcc(b);
-          const ok = exact || close, xp = exact ? 5 : close ? 3 : 0;
+          const a = norm(input.value), r = PT.dictCheck(input.value, text);
+          const exact = r === "exact", close = r === "accent", typo = r === "typo";
+          const ok = r !== "wrong", xp = exact ? 5 : ok ? 3 : 0;
           if (ok) { PT.S.stats.dictOk++; PT.S.stats.listenOk++; }
           PT.gain(xp, { o: 1 });
           const typed = new Set(a.split(" ").map(stripAcc));
           const marked = text.split(" ").map((w) => (typed.has(stripAcc(norm(w))) ? h("span", {}, w + " ") : h("strong", { style: "color:var(--bad)" }, w + " ")));
           foot.replaceWith(feedbackBar(ok, h("div", { class: "stack", style: "gap:6px" },
-            close ? h("p", { class: "small" }, "Quase perfeito! Cuidado com os acentos.") : null,
-            h("div", { class: "row", style: "flex-wrap:nowrap" }, PT.speakBtn(text), h("p", {}, ok ? text : marked))),
+            close ? h("p", { class: "small" }, "Quase perfeito! Confira os acentos e os hifens.") : typo ? h("p", { class: "small" }, "Quase! Tem uma letra errada na palavra em vermelho.") : null,
+            h("div", { class: "row", style: "flex-wrap:nowrap" }, PT.speakBtn(text), h("p", {}, ok && !typo ? text : marked))),
             () => done({ ok, xp }), st));
         };
         check.onclick = doCheck;
         st.onEnter = doCheck;
-        setTimeout(() => { PT.speak(text); input.focus({ preventScroll: true }); }, 250);
+        PT.speakSoon(text);
+        setTimeout(() => input.focus({ preventScroll: true }), 250);
         body.append(h("div", { class: "prompt" }, "Ouça e escreva"),
           h("div", { class: "row", style: "justify-content:center;gap:16px" }, PT.speakBtn(text, { lg: true }), PT.speakBtn(text, { slow: true })),
           input, foot);
@@ -310,7 +312,7 @@
       render([text, ctx], body, done, st) {
         const grade = (xp, ok) => { PT.gain(xp, { o: 1 }); done({ ok, xp }); };
         st.onNum = (n) => n <= 3 && grade(4 - n, n === 1);
-        setTimeout(() => PT.speak(text), 250);
+        PT.speakSoon(text);
         body.append(
           h("div", { class: "ctx" }, "💭 ", ctx),
           h("div", { class: "panel flash", style: "min-height:220px" },

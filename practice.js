@@ -342,8 +342,7 @@
         h("button", { class: "tile", onclick: PT.startRepeat, disabled: !tts.ok }, h("span", { class: "e" }, "🗣️"), h("b", {}, "Repita comigo"), h("span", { class: "small muted" }, "Frases do dia a dia em voz alta")),
         h("div", { class: "tile", style: "cursor:default" }, h("span", { class: "e" }, "🎚️"), h("b", {}, "Velocidade"), h("span", { class: "small muted" }, "Todo áudio tem um botão de tartaruga para ouvir devagar."))),
       h("p", { class: "small muted" }, "O microfone não funciona dentro desta página. No “Repita comigo”, você fala em voz alta e dá a sua própria nota."),
-
-      PT.bonusCard()
+      h("p", { class: "small muted" }, "Procurando o Laboratório de sons? Ele agora fica na aba ", h("button", { class: "link", onclick: () => PT.go("estudo") }, "Sons e gramática"), ".")
     ));
   };
 })();

@@ -111,8 +111,9 @@ main { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 18
 @media (max-width: 460px) { .grid2.wrap1 { grid-template-columns: 1fr; } }
 
 .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.nav-inner { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
-.nav button { background: none; border: 0; padding: 9px 2px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .72rem; font-weight: 700; color: var(--ink-3); }
+.nav-inner { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(6, 1fr); }
+.nav button { background: none; border: 0; padding: 9px 2px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .72rem; font-weight: 700; color: var(--ink-3); line-height: 1.15; text-align: center; }
+@media (max-width: 480px) { .nav button { font-size: .64rem; } }
 .nav svg { width: 24px; height: 24px; }
 .nav button[aria-current="page"] { color: var(--accent); }
 body.focus .nav { display: none; }
@@ -432,6 +433,33 @@ details[open] > summary .chev { transform: rotate(90deg); }
 .nasal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
 .opt.ipa { font-family: var(--ipa); font-size: 1.2rem; }
 
+/* ---------- gramática ---------- */
+.gcard { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; transition: transform .12s ease, border-color .12s ease; }
+.gcard:hover { transform: translateY(-1px); border-color: var(--ink-3); }
+.gcard .e { font-size: 1.6rem; flex: none; width: 1.4em; text-align: center; }
+.gcard .gtxt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gcard .gtxt b { font-size: 1rem; }
+.gcard .gtxt small { color: var(--ink-2); font-size: .85rem; line-height: 1.3; }
+.gcard .gmeta { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.gcard .gcount { font-size: .78rem; font-weight: 800; color: var(--ink-3); }
+.gcard.locked { background: transparent; border-style: dashed; }
+.gcard.locked b { color: var(--ink-2); }
+.gcard.locked .e { font-size: 1.15rem; opacity: .7; }
+.gnew { flex: none; background: var(--accent); color: var(--on-accent); font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+.gpart { gap: 14px; }
+.gtable-wrap { overflow-x: auto; margin-inline: -4px; padding-inline: 4px; }
+.gtable { border-collapse: collapse; width: 100%; font-size: .95rem; }
+.gtable th, .gtable td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.gtable thead th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 800; white-space: nowrap; }
+.gtable tbody th { font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+.gtable tbody tr:last-child th, .gtable tbody tr:last-child td { border-bottom: 0; }
+.gex { display: flex; align-items: center; gap: 10px; }
+.gex .speak { width: 34px; height: 34px; }
+.gex .speak svg { width: 17px; height: 17px; }
+.gnote { font-size: .92rem; line-height: 1.45; padding: 10px 12px; }
+.gunlock { width: 100%; text-align: left; border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: 12px; background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+.gunlock small { color: var(--ink-2); font-size: .85rem; }
+
 /* ---------- trilha de sons: gravador ---------- */
 .rec { display: flex; flex-direction: column; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
 .rec-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 24px; border-radius: 999px; border: 0; background: var(--bad); color: var(--surface); font-weight: 800; font-size: 1.05rem; box-shadow: 0 4px 0 color-mix(in srgb, var(--bad) 62%, #000); }
@@ -476,6 +504,7 @@ details[open] > summary .chev { transform: rotate(90deg); }
     <button data-tab="trilha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h7"/></svg>Trilha</button>
     <button data-tab="cartoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="15" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/></svg>Cartões</button>
     <button data-tab="ouvir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg>Ouvir</button>
+    <button data-tab="estudo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h13v-4"/><path d="M9 8h6M9 12h4"/></svg>Sons e gramática</button>
     <button data-tab="conversa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Conversa</button>
   </div>
 </nav>
@@ -501,5 +530,7 @@ details[open] > summary .chev { transform: rotate(90deg); }
 <script charset="utf-8" src="sons.js"></script>
 <script charset="utf-8" src="data-trilha-sons.js"></script>
 <script charset="utf-8" src="trilha-sons.js"></script>
+<script charset="utf-8" src="data-gramatica.js"></script>
+<script charset="utf-8" src="gramatica.js"></script>
 <script charset="utf-8" src="music.js"></script>
 <script charset="utf-8" src="chat.js"></script>

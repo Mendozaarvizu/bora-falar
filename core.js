@@ -416,7 +416,7 @@
     const v = $("#view");
     PT.put(v);
     PT.views[tab](v, arg);
-    const navTab = tab === "sons" ? "ouvir" : tab;
+    const navTab = tab === "sons" || tab === "gram" ? "estudo" : tab;
     document.querySelectorAll(".nav button").forEach((b) => { if (b.dataset.tab === navTab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
     try { if (location.hash.slice(1) !== tab) history.replaceState(null, "", "#" + tab); } catch (e) { /* sem histórico */ }
     window.scrollTo(0, 0);

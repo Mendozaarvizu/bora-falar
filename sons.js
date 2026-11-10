@@ -17,12 +17,15 @@
   const say = (w, pt) => ipaWord(w, null, pt);
   const note = (flag, text) => h("div", { class: "pt-note", html: `${flag} ${md(text)}` });
 
-  PT.bonusCard = () => h("button", { class: "bonus", type: "button", onclick: () => PT.go("sons") },
-    h("span", { class: "ipa-mark", "aria-hidden": "true" }, "[ˈsõj̃s]"),
-    h("span", { class: "stack", style: "gap:2px" },
-      h("span", { class: "label" }, "Bônus"),
-      h("b", { style: "font-size:1.05rem" }, "Laboratório de sons"),
-      h("small", {}, "Uma trilha de pronúncia para treinar o ouvido e gravar a sua voz, e o guia de todos os sons do Brasil e de Portugal.")));
+  PT.bonusCard = () => {
+    const g = PT.gramCount ? PT.gramCount() : null;
+    return h("button", { class: "bonus", type: "button", onclick: () => PT.go("estudo") },
+      h("span", { class: "ipa-mark", "aria-hidden": "true" }, "[ˈsõj̃s]"),
+      h("span", { class: "stack", style: "gap:2px" },
+        h("span", { class: "label" }, g ? `Gramática · ${g.open}/${g.total} temas` : "Para ir mais fundo"),
+        h("b", { style: "font-size:1.05rem" }, "Sons e gramática"),
+        h("small", {}, "A trilha de pronúncia, o guia dos sons do Brasil e de Portugal, e a gramática das lições que você já fez, com tabelas e mais exemplos.")));
+  };
 
   /* ---------- desenhos ---------- */
   function vowelChart() {
@@ -224,8 +227,8 @@
     tabBtns = TABS.map(([id, label]) => h("button", { type: "button", "data-t": id, onclick: () => show(id) }, label));
     root.append(h("div", { class: "stack" },
       h("div", {},
-        h("button", { class: "link small", style: "text-decoration:none", onclick: () => PT.go("ouvir") }, "← Ouvir"),
-        h("div", { class: "label", style: "margin-top:8px" }, "Bônus · Fonética"),
+        h("button", { class: "link small", style: "text-decoration:none", onclick: () => PT.go("estudo") }, "← Sons e gramática"),
+        h("div", { class: "label", style: "margin-top:8px" }, "Sons · Fonética"),
         h("h1", {}, "Laboratório de sons")),
       h("div", { class: "tabs seg", role: "tablist" }, tabBtns),
       paneEl));

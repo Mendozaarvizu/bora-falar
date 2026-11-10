@@ -418,6 +418,8 @@
       PT.gain(bonus, { l: 1 });
       if (perfect) PT.award("perfeito");
       PT.confetti(perfect ? 180 : 110);
+      // Na primeira vez, a lição pode abrir temas (ou partes novas) na gramática.
+      const gram = !practice && !L.unit.track && PT.gramNewFor ? PT.gramNewFor(L.id) : [];
 
       // A próxima lição continua no mesmo caminho: na trilha principal ou no caminho opcional.
       const pool = L.unit.track ? PT.trackLessons(L.unit.track) : PT.mainLessons(), nl = pool.find((l) => !(S.lessons[l.id] || {}).done);
@@ -432,6 +434,10 @@
           h("div", { class: "stat" }, h("b", {}, st.best), h("span", {}, "melhor sequência")),
           h("div", { class: "stat" }, h("b", {}, added), h("span", {}, "cartões novos"))),
         added ? h("p", { class: "muted small" }, "As palavras desta lição já estão nos seus cartões de revisão.") : null,
+        gram.length ? h("button", { class: "gunlock", type: "button", onclick: () => (gram.length === 1 ? PT.go("gram", gram[0].id) : PT.go("estudo")) },
+          h("span", { class: "label" }, "📘 Novo na gramática"),
+          h("b", {}, gram.map((T) => T.t).join(" · ")),
+          h("small", {}, "A explicação completa desta lição, com tabelas e mais exemplos.")) : null,
         h("div", { class: "stack", style: "width:100%;gap:10px" },
           nl ? h("button", { class: "btn block", onclick: () => PT.startLesson(nl.id) }, `Próxima: ${nl.t}`) : null,
           h("button", { class: "btn ghost block", onclick: () => PT.go("trilha") }, "Voltar à trilha"))));
